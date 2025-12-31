@@ -5,12 +5,13 @@ interface HeaderProps {
   cartCount: number;
   onCartClick: () => void;
   onLogoClick: () => void;
+  onAboutClick: () => void;
   onAdminClick: () => void;
   isAdmin: boolean;
   logo?: string;
 }
 
-const Header: React.FC<HeaderProps> = ({ cartCount, onCartClick, onLogoClick, onAdminClick, isAdmin, logo }) => {
+const Header: React.FC<HeaderProps> = ({ cartCount, onCartClick, onLogoClick, onAboutClick, onAdminClick, isAdmin, logo }) => {
   return (
     <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm">
       <div className="h-1.5 header-animated w-full"></div>
@@ -26,7 +27,7 @@ const Header: React.FC<HeaderProps> = ({ cartCount, onCartClick, onLogoClick, on
           )}
           <div>
             <h1 className="text-lg md:text-2xl font-black font-heading text-onyx tracking-tighter uppercase leading-none">Barão do <span className="text-ferrari">Espetinho</span></h1>
-            <p className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest leading-none mt-1">Premium Grill & Delivery</p>
+            <p className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest leading-none mt-1">ESPETINHOS PREMIUM PARA ASSAR</p>
           </div>
         </div>
 
@@ -35,7 +36,7 @@ const Header: React.FC<HeaderProps> = ({ cartCount, onCartClick, onLogoClick, on
             <button onClick={onLogoClick} className="font-black text-onyx hover:text-ferrari interactive-element uppercase text-lg lg:text-xl tracking-tighter flex items-center gap-2 text-shadow-gray">
               <i className="fas fa-utensils text-sm text-ferrari"></i> Cardápio
             </button>
-            <button className="font-black text-onyx hover:text-ferrari interactive-element uppercase text-lg lg:text-xl tracking-tighter flex items-center gap-2 text-shadow-gray">
+            <button onClick={onAboutClick} className="font-black text-onyx hover:text-ferrari interactive-element uppercase text-lg lg:text-xl tracking-tighter flex items-center gap-2 text-shadow-gray">
               <i className="fas fa-star text-sm text-ferrari"></i> Sobre
             </button>
             <button className="font-black text-onyx hover:text-ferrari interactive-element uppercase text-lg lg:text-xl tracking-tighter flex items-center gap-2 text-shadow-gray">

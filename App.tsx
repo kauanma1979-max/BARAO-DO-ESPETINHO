@@ -7,12 +7,13 @@ import Catalog from './components/Catalog';
 import Cart from './components/Cart';
 import Checkout from './components/Checkout';
 import AdminPanel from './components/AdminPanel';
+import About from './components/About';
 import Footer from './components/Footer';
 import LoginModal from './components/LoginModal';
 import { GoogleGenAI } from "@google/genai";
 
 const App: React.FC = () => {
-  const [view, setView] = useState<'catalog' | 'cart' | 'checkout' | 'admin' | 'success'>('catalog');
+  const [view, setView] = useState<'catalog' | 'cart' | 'checkout' | 'admin' | 'success' | 'about'>('catalog');
   const [products, setProducts] = useState<Product[]>(() => {
     const saved = localStorage.getItem('products');
     return saved ? JSON.parse(saved) : INITIAL_PRODUCTS;
@@ -73,7 +74,6 @@ const App: React.FC = () => {
     setIsGeneratingMap(true);
     let mapsUrl = '';
 
-    // Buscar link do Google Maps via Gemini se for delivery
     if (order.customer.deliveryType === 'delivery') {
       try {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -85,13 +85,11 @@ const App: React.FC = () => {
           },
         });
 
-        // Tentar extrair a URI dos grounding chunks
         const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
         if (chunks && chunks.length > 0) {
           mapsUrl = chunks.find(chunk => chunk.maps?.uri)?.maps?.uri || '';
         }
 
-        // Fallback caso a IA não retorne link direto
         if (!mapsUrl) {
           mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.customer.address)}`;
         }
@@ -131,6 +129,7 @@ const App: React.FC = () => {
         cartCount={cartTotalItems} 
         onCartClick={() => setView('cart')}
         onLogoClick={() => setView('catalog')}
+        onAboutClick={() => setView('about')}
         onAdminClick={() => isAdmin ? setView('admin') : setShowLogin(true)}
         isAdmin={isAdmin}
         logo={logo}
@@ -140,6 +139,9 @@ const App: React.FC = () => {
         <div className="max-w-7xl mx-auto">
           {view === 'catalog' && (
             <Catalog products={products} addToCart={addToCart} cart={cart} updateCartQuantity={updateCartQuantity} />
+          )}
+          {view === 'about' && (
+            <About onBack={() => setView('catalog')} />
           )}
           {view === 'cart' && (
             <Cart 
@@ -212,7 +214,6 @@ const App: React.FC = () => {
 
       {showLogin && <LoginModal onLogin={handleAdminAuth} onClose={() => setShowLogin(false)} />}
       
-      {/* Loading Overlay para geração do mapa */}
       {isGeneratingMap && (
         <div className="fixed inset-0 z-[100] bg-white/80 backdrop-blur-sm flex items-center justify-center">
           <div className="text-center">
@@ -222,20 +223,19 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* Quick Access Mobile Tab Bar */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex justify-around items-center h-16 px-4 shadow-[0_-5px_20px_rgba(0,0,0,0.05)] z-40">
         <button onClick={() => setView('catalog')} className={`flex flex-col items-center gap-1 ${view === 'catalog' ? 'text-ferrari' : 'text-gray-400'}`}>
           <i className="fas fa-home text-lg"></i>
           <span className="text-[10px] font-bold uppercase">Menu</span>
         </button>
+        <button onClick={() => setView('about')} className={`flex flex-col items-center gap-1 ${view === 'about' ? 'text-ferrari' : 'text-gray-400'}`}>
+          <i className="fas fa-star text-lg"></i>
+          <span className="text-[10px] font-bold uppercase">Sobre</span>
+        </button>
         <button onClick={() => setView('cart')} className={`flex flex-col items-center gap-1 relative ${view === 'cart' ? 'text-ferrari' : 'text-gray-400'}`}>
           <i className="fas fa-shopping-basket text-lg"></i>
           {cartTotalItems > 0 && <span className="absolute -top-1 -right-1 bg-ferrari text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{cartTotalItems}</span>}
           <span className="text-[10px] font-bold uppercase">Carrinho</span>
-        </button>
-        <button onClick={() => isAdmin ? setView('admin') : setShowLogin(true)} className={`flex flex-col items-center gap-1 ${view === 'admin' ? 'text-ferrari' : 'text-gray-400'}`}>
-          <i className="fas fa-cog text-lg"></i>
-          <span className="text-[10px] font-bold uppercase">Ajustes</span>
         </button>
       </div>
     </div>
