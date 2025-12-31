@@ -116,6 +116,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
     return `${day}/${month}/${year}`;
   };
 
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
+
   const textClass = "text-black text-shadow-gray font-black uppercase tracking-tighter";
 
   return (
@@ -297,7 +304,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
                       <td className="p-12 border-b border-gray-100">
                         <div className="flex flex-col">
                           <span className="font-black text-ferrari tracking-tight text-3xl">#{order.id}</span>
-                          <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">DATA: {formatDate(order.date)}</span>
+                          <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
+                            {formatDate(order.date)} - {formatTime(order.date)}
+                          </span>
                         </div>
                       </td>
                       <td className="p-12 border-b border-gray-100">
