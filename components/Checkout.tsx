@@ -10,14 +10,17 @@ interface CheckoutProps {
 }
 
 const Checkout: React.FC<CheckoutProps> = ({ items, subtotal, onSubmit, onBack }) => {
-  const [customer, setCustomer] = useState<Customer>({
+  const [customer, setCustomer] = useState<Customer & { houseNumber?: string, complement?: string }>({
     name: '',
     phone: '',
     address: '',
-    deliveryType: 'delivery'
+    deliveryType: 'delivery',
+    houseNumber: '',
+    complement: ''
   });
   const [cep, setCep] = useState('');
   const [isSearchingCep, setIsSearchingCep] = useState(false);
+  const [cepFound, setCepFound] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.PIX);
   const [payerName, setPayerName] = useState('');
   const [changeFor, setChangeFor] = useState<string>('');
@@ -39,10 +42,11 @@ const Checkout: React.FC<CheckoutProps> = ({ items, subtotal, onSubmit, onBack }
 
       if (data.erro) {
         alert('CEP não encontrado. Por favor, digite o endereço manualmente.');
+        setCepFound(false);
       } else {
-        const fullAddress = `${data.logradouro}, ${data.bairro}, ${data.localidade} - ${data.uf}`;
-        setCustomer(prev => ({ ...prev, address: fullAddress }));
-        // Foco sugestivo no campo de endereço para o usuário adicionar o número
+        const baseAddress = `${data.logradouro}, ${data.bairro}, ${data.localidade} - ${data.uf}`;
+        setCustomer(prev => ({ ...prev, address: baseAddress }));
+        setCepFound(true);
       }
     } catch (error) {
       console.error('Erro ao buscar CEP:', error);
@@ -59,10 +63,16 @@ const Checkout: React.FC<CheckoutProps> = ({ items, subtotal, onSubmit, onBack }
       return;
     }
 
+    // Concatenar número e complemento se existirem
+    let finalAddress = customer.address;
+    if (cepFound && customer.houseNumber) {
+      finalAddress = `${customer.address}, Nº ${customer.houseNumber}${customer.complement ? ` (${customer.complement})` : ''}`;
+    }
+
     const order: Order = {
       id: Math.floor(Math.random() * 90000 + 10000).toString(),
       date: new Date().toISOString(),
-      customer,
+      customer: { ...customer, address: finalAddress },
       items,
       subtotal,
       deliveryFee,
@@ -76,7 +86,6 @@ const Checkout: React.FC<CheckoutProps> = ({ items, subtotal, onSubmit, onBack }
     onSubmit(order);
   };
 
-  // Estilo solicitado: Texto preto puro, negrito, caixa alta e sombra cinza
   const textClass = "text-black text-shadow-gray font-black uppercase tracking-tighter";
 
   return (
@@ -91,21 +100,16 @@ const Checkout: React.FC<CheckoutProps> = ({ items, subtotal, onSubmit, onBack }
            
            {/* Card: Dados do Cliente */}
            <div className="bg-white rounded-[2.5rem] p-10 shadow-sm border border-gray-100 relative overflow-hidden">
-             <div className="absolute top-0 right-0 p-8 opacity-5">
-               <i className="fas fa-user-gear text-8xl"></i>
-             </div>
              <div className="flex items-center gap-5 mb-10">
                <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-ferrari shadow-inner border border-gray-100">
                  <i className="fas fa-user-tag text-2xl"></i>
                </div>
-               <h3 className={`text-xl font-heading ${textClass}`}>Quem Recebe?</h3>
+               <h3 className={`text-xl font-heading ${textClass}`}>Identificação</h3>
              </div>
              
              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                <div className="space-y-3">
-                 <label className={`text-[10px] tracking-widest pl-4 flex items-center gap-2 ${textClass}`}>
-                   <i className="fas fa-font text-ferrari"></i> Nome Completo
-                 </label>
+                 <label className={`text-[10px] tracking-widest pl-4 flex items-center gap-2 ${textClass}`}>Nome Completo</label>
                  <input 
                   type="text" 
                   value={customer.name} 
@@ -116,9 +120,7 @@ const Checkout: React.FC<CheckoutProps> = ({ items, subtotal, onSubmit, onBack }
                  />
                </div>
                <div className="space-y-3">
-                 <label className={`text-[10px] tracking-widest pl-4 flex items-center gap-2 ${textClass}`}>
-                   <i className="fab fa-whatsapp text-green-600 text-lg"></i> WhatsApp
-                 </label>
+                 <label className={`text-[10px] tracking-widest pl-4 flex items-center gap-2 ${textClass}`}>WhatsApp</label>
                  <input 
                   type="tel" 
                   value={customer.phone} 
@@ -131,13 +133,13 @@ const Checkout: React.FC<CheckoutProps> = ({ items, subtotal, onSubmit, onBack }
              </div>
            </div>
 
-           {/* Card: Logística de Entrega */}
+           {/* Card: Entrega com Busca por CEP */}
            <div className="bg-white rounded-[2.5rem] p-10 shadow-sm border border-gray-100">
              <div className="flex items-center gap-5 mb-10">
                <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-ferrari shadow-inner border border-gray-100">
                  <i className="fas fa-route text-2xl"></i>
                </div>
-               <h3 className={`text-xl font-heading ${textClass}`}>Logística</h3>
+               <h3 className={`text-xl font-heading ${textClass}`}>Onde Entregamos?</h3>
              </div>
              
              <div className="grid grid-cols-2 gap-6 mb-8">
@@ -147,7 +149,7 @@ const Checkout: React.FC<CheckoutProps> = ({ items, subtotal, onSubmit, onBack }
                 className={`p-8 rounded-[2rem] border-2 transition-all flex flex-col items-center gap-4 ${customer.deliveryType === 'delivery' ? 'border-ferrari bg-ferrari/5 shadow-lg scale-105' : 'border-gray-50 grayscale opacity-30'}`}
                >
                  <i className="fas fa-motorcycle text-4xl text-ferrari"></i>
-                 <span className={textClass}>Receber em Casa</span>
+                 <span className={textClass}>Delivery</span>
                </button>
                <button 
                 type="button"
@@ -155,17 +157,14 @@ const Checkout: React.FC<CheckoutProps> = ({ items, subtotal, onSubmit, onBack }
                 className={`p-8 rounded-[2rem] border-2 transition-all flex flex-col items-center gap-4 ${customer.deliveryType === 'pickup' ? 'border-ferrari bg-ferrari/5 shadow-lg scale-105' : 'border-gray-50 grayscale opacity-30'}`}
                >
                  <i className="fas fa-shop-lock text-4xl text-ferrari"></i>
-                 <span className={textClass}>Retirar na Loja</span>
+                 <span className={textClass}>Retirada</span>
                </button>
              </div>
 
              {customer.deliveryType === 'delivery' && (
                <div className="space-y-6 animate-fade-in-up">
-                 {/* Busca por CEP */}
                  <div className="space-y-3">
-                    <label className={`text-[10px] tracking-widest pl-4 flex items-center gap-2 ${textClass}`}>
-                      <i className="fas fa-magnifying-glass-location text-ferrari"></i> Buscar por CEP
-                    </label>
+                    <label className={`text-[10px] tracking-widest pl-4 flex items-center gap-2 ${textClass}`}>Buscar CEP</label>
                     <div className="flex gap-3">
                       <input 
                         type="text" 
@@ -179,7 +178,7 @@ const Checkout: React.FC<CheckoutProps> = ({ items, subtotal, onSubmit, onBack }
                         type="button"
                         onClick={handleCepSearch}
                         disabled={isSearchingCep}
-                        className="bg-onyx text-white px-8 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-ferrari transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                        className="bg-onyx text-white px-8 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-ferrari transition-all flex items-center justify-center gap-2"
                       >
                         {isSearchingCep ? <i className="fas fa-spinner animate-spin"></i> : <i className="fas fa-search"></i>}
                         Buscar
@@ -187,26 +186,52 @@ const Checkout: React.FC<CheckoutProps> = ({ items, subtotal, onSubmit, onBack }
                     </div>
                  </div>
 
-                 {/* Endereço Manual / Resultante do CEP */}
-                 <div className="space-y-3">
-                   <label className={`text-[10px] tracking-widest pl-4 flex items-center gap-2 ${textClass}`}>
-                     <i className="fas fa-location-dot text-ferrari"></i> Onde Entregamos?
-                   </label>
-                   <textarea 
-                    value={customer.address} 
-                    onChange={e => setCustomer({...customer, address: e.target.value})}
-                    required={customer.deliveryType === 'delivery'}
-                    placeholder="DIGITE O ENDEREÇO, NÚMERO E BAIRRO..."
-                    rows={3}
-                    className="w-full bg-slate-50 border-2 border-transparent rounded-2xl p-6 font-black text-black uppercase focus:border-ferrari outline-none transition-all shadow-inner resize-none" 
-                   />
-                   <p className="text-[9px] text-gray-400 font-bold uppercase px-4 italic">*Não esqueça de incluir o número e complemento.</p>
-                 </div>
+                 {cepFound ? (
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in-up">
+                     <div className="md:col-span-2 p-5 bg-slate-50 rounded-2xl border border-gray-100">
+                        <p className={`text-[10px] mb-1 ${textClass} text-gray-400`}>Endereço Identificado</p>
+                        <p className="font-black text-black uppercase">{customer.address}</p>
+                     </div>
+                     <div className="space-y-3">
+                       <label className={`text-[10px] tracking-widest pl-4 ${textClass}`}>Número</label>
+                       <input 
+                        type="text" 
+                        value={customer.houseNumber} 
+                        onChange={e => setCustomer({...customer, houseNumber: e.target.value})}
+                        required
+                        placeholder="Nº"
+                        className="w-full bg-slate-50 border-2 border-transparent rounded-2xl p-5 font-black text-black uppercase focus:border-ferrari outline-none transition-all shadow-inner" 
+                       />
+                     </div>
+                     <div className="space-y-3">
+                       <label className={`text-[10px] tracking-widest pl-4 ${textClass}`}>Complemento</label>
+                       <input 
+                        type="text" 
+                        value={customer.complement} 
+                        onChange={e => setCustomer({...customer, complement: e.target.value})}
+                        placeholder="APT, BLOCO, ETC"
+                        className="w-full bg-slate-50 border-2 border-transparent rounded-2xl p-5 font-black text-black uppercase focus:border-ferrari outline-none transition-all shadow-inner" 
+                       />
+                     </div>
+                   </div>
+                 ) : (
+                   <div className="space-y-3">
+                     <label className={`text-[10px] tracking-widest pl-4 ${textClass}`}>Endereço Manual</label>
+                     <textarea 
+                      value={customer.address} 
+                      onChange={e => setCustomer({...customer, address: e.target.value})}
+                      required={customer.deliveryType === 'delivery'}
+                      placeholder="DIGITE O ENDEREÇO COMPLETO COM NÚMERO..."
+                      rows={3}
+                      className="w-full bg-slate-50 border-2 border-transparent rounded-2xl p-6 font-black text-black uppercase focus:border-ferrari outline-none transition-all shadow-inner resize-none" 
+                     />
+                   </div>
+                 )}
                </div>
              )}
            </div>
 
-           {/* Card: Pagamento */}
+           {/* Card: Pagamento - Aumentado conforme solicitado */}
            <div className="bg-white rounded-[2.5rem] p-10 shadow-sm border border-gray-100">
              <div className="flex items-center gap-5 mb-10">
                <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-ferrari shadow-inner border border-gray-100">
@@ -215,20 +240,20 @@ const Checkout: React.FC<CheckoutProps> = ({ items, subtotal, onSubmit, onBack }
                <h3 className={`text-xl font-heading ${textClass}`}>Forma de Pagamento</h3>
              </div>
              
-             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 {[
-                  { id: PaymentMethod.PIX, label: 'PIX (Rápido)', icon: 'fa-bolt' },
-                  { id: PaymentMethod.CARD, label: 'Cartão', icon: 'fa-credit-card' },
-                  { id: PaymentMethod.CASH, label: 'Dinheiro', icon: 'fa-money-bill-1' }
+                  { id: PaymentMethod.PIX, label: 'PIX', icon: 'fa-brands fa-pix' },
+                  { id: PaymentMethod.CARD, label: 'Cartão', icon: 'fa-solid fa-credit-card' },
+                  { id: PaymentMethod.CASH, label: 'Dinheiro', icon: 'fa-solid fa-money-bill-1' }
                 ].map(p => (
                   <button 
                     key={p.id}
                     type="button"
                     onClick={() => setPaymentMethod(p.id)}
-                    className={`flex items-center gap-4 p-5 rounded-2xl border-2 transition-all ${paymentMethod === p.id ? 'border-ferrari bg-ferrari/5 shadow-md scale-105' : 'border-gray-50 hover:bg-gray-50'}`}
+                    className={`flex flex-col items-center justify-center gap-5 p-12 rounded-[2.5rem] border-4 transition-all ${paymentMethod === p.id ? 'border-ferrari bg-ferrari/5 shadow-2xl scale-105' : 'border-slate-50 grayscale opacity-40 hover:grayscale-0 hover:opacity-100'}`}
                   >
-                    <i className={`fas ${p.icon} text-lg ${paymentMethod === p.id ? 'text-ferrari' : 'text-gray-300'}`}></i>
-                    <span className={`${textClass} text-[9px]`}>{p.label}</span>
+                    <i className={`${p.icon} text-5xl ${paymentMethod === p.id ? 'text-ferrari' : 'text-gray-400'}`}></i>
+                    <span className={`${textClass} text-xl lg:text-2xl`}>{p.label}</span>
                   </button>
                 ))}
              </div>
@@ -236,23 +261,22 @@ const Checkout: React.FC<CheckoutProps> = ({ items, subtotal, onSubmit, onBack }
              {paymentMethod === PaymentMethod.PIX && (
                <div className="space-y-6 animate-fade-in-up p-8 bg-slate-50 rounded-[2rem] border border-gray-100">
                   <div className="flex items-center gap-6">
-                    <div className="w-24 h-24 bg-white p-2 rounded-2xl shadow-md shrink-0 border border-gray-100">
+                    <div className="w-24 h-24 bg-white p-2 rounded-2xl shadow-md border border-gray-100">
                       <img src="https://gerarqrcodepix.com.br/api/v1?nome=Barao%20do%20Espetinho&cidade=Sao%20Paulo&chave=CONTATO@BARAODOESPETINHO.COM&valor=&saida=qr" alt="PIX" className="w-full h-full" />
                     </div>
                     <div>
-                      <p className={`text-[10px] mb-1 ${textClass} text-ferrari`}>Pagamento Instantâneo</p>
-                      <p className={textClass + " text-sm"}>Chave: 12.345.678/0001-90</p>
-                      <button type="button" className={`text-[9px] mt-2 underline ${textClass}`}>Copiar Código Pix</button>
+                      <p className={`text-[10px] mb-1 ${textClass} text-ferrari`}>Pague agora</p>
+                      <p className={textClass + " text-sm"}>CNPJ: 12.345.678/0001-90</p>
                     </div>
                   </div>
                   <div className="space-y-3 pt-4 border-t border-gray-200">
-                    <label className={`text-[10px] pl-4 ${textClass}`}>Nome Completo do Pagador</label>
+                    <label className={`text-[10px] pl-4 ${textClass}`}>Nome do Pagador</label>
                     <input 
                       type="text" 
                       value={payerName} 
                       onChange={e => setPayerName(e.target.value)}
-                      placeholder="COMO APARECE NO COMPROVANTE"
-                      className="w-full bg-white border-none rounded-2xl p-5 font-black text-black uppercase focus:ring-4 focus:ring-ferrari/10 outline-none shadow-sm" 
+                      placeholder="NOME DO COMPROVANTE"
+                      className="w-full bg-white border-none rounded-2xl p-5 font-black text-black uppercase focus:ring-4 focus:ring-ferrari/10 outline-none" 
                     />
                   </div>
                </div>
@@ -261,25 +285,21 @@ const Checkout: React.FC<CheckoutProps> = ({ items, subtotal, onSubmit, onBack }
              {paymentMethod === PaymentMethod.CASH && (
                 <div className="space-y-3 animate-fade-in-up">
                   <label className={`text-[10px] pl-4 ${textClass}`}>Troco para quanto?</label>
-                  <div className="relative">
-                    <i className="fas fa-hand-holding-dollar absolute left-6 top-1/2 -translate-y-1/2 text-ferrari"></i>
-                    <input 
-                      type="number" 
-                      value={changeFor} 
-                      onChange={e => setChangeFor(e.target.value)}
-                      placeholder="EX: 100,00"
-                      className="w-full bg-slate-50 border-2 border-transparent rounded-2xl p-5 pl-14 font-black text-black focus:border-ferrari outline-none transition-all shadow-inner" 
-                    />
-                  </div>
+                  <input 
+                    type="number" 
+                    value={changeFor} 
+                    onChange={e => setChangeFor(e.target.value)}
+                    placeholder="EX: 100"
+                    className="w-full bg-slate-50 border-2 border-transparent rounded-2xl p-5 font-black text-black uppercase focus:border-ferrari outline-none transition-all shadow-inner" 
+                  />
                 </div>
              )}
            </div>
          </div>
 
-         {/* Painel Lateral: Resumo Financeiro */}
+         {/* Painel Lateral */}
          <div className="lg:col-span-2">
-            <div className="bg-white rounded-[3rem] p-10 text-black sticky top-24 shadow-2xl border border-gray-100 overflow-hidden fade-in-up" style={{animationDelay: '0.3s'}}>
-              
+            <div className="bg-white rounded-[3rem] p-10 text-black sticky top-24 shadow-2xl border border-gray-100 overflow-hidden fade-in-up">
               <h3 className={`text-xl mb-8 flex items-center gap-3 ${textClass}`}>
                 <i className="fas fa-receipt text-ferrari"></i> Fechamento
               </h3>
@@ -298,7 +318,7 @@ const Checkout: React.FC<CheckoutProps> = ({ items, subtotal, onSubmit, onBack }
 
               <div className="space-y-5 mb-10">
                 <div className="flex justify-between items-center">
-                  <span className={`text-xs ${textClass}`}>Subtotal Itens</span>
+                  <span className={`text-xs ${textClass}`}>Produtos</span>
                   <span className={textClass}>R$ {subtotal.toFixed(2).replace('.', ',')}</span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -307,7 +327,7 @@ const Checkout: React.FC<CheckoutProps> = ({ items, subtotal, onSubmit, onBack }
                 </div>
                 <div className="pt-6 border-t-2 border-onyx flex justify-between items-end">
                   <div className="flex flex-col">
-                    <span className={`text-[10px] mb-1 ${textClass} text-ferrari`}>TOTAL A PAGAR</span>
+                    <span className={`text-[10px] mb-1 ${textClass} text-ferrari`}>TOTAL</span>
                     <span className={`text-4xl font-black ${textClass.replace('text-black', '')}`}>R$ {total.toFixed(2).replace('.', ',')}</span>
                   </div>
                 </div>
@@ -317,18 +337,9 @@ const Checkout: React.FC<CheckoutProps> = ({ items, subtotal, onSubmit, onBack }
                 type="submit"
                 className="w-full bg-black text-white py-6 rounded-[2rem] font-black uppercase tracking-[0.3em] text-xs hover:bg-ferrari transition-all shadow-xl shadow-black/30 transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-4 group"
               >
-                Confirmar Pedido
+                Concluir Pedido
                 <i className="fas fa-fire-flame-simple group-hover:scale-125 transition-transform"></i>
               </button>
-              
-              <div className="mt-8 p-6 bg-slate-50 rounded-2xl flex items-center gap-4 border border-gray-100">
-                <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 text-lg shadow-inner">
-                  <i className="fas fa-shield-halved"></i>
-                </div>
-                <p className={`text-[9px] leading-relaxed font-bold uppercase tracking-wider ${textClass}`}>
-                  Ambiente Seguro. A melhor brasa e a entrega mais rápida da região.
-                </p>
-              </div>
             </div>
          </div>
        </form>
