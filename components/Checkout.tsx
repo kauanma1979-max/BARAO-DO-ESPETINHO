@@ -16,12 +16,41 @@ const Checkout: React.FC<CheckoutProps> = ({ items, subtotal, onSubmit, onBack }
     address: '',
     deliveryType: 'delivery'
   });
+  const [cep, setCep] = useState('');
+  const [isSearchingCep, setIsSearchingCep] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.PIX);
   const [payerName, setPayerName] = useState('');
   const [changeFor, setChangeFor] = useState<string>('');
 
   const deliveryFee = customer.deliveryType === 'delivery' ? 5.0 : 0;
   const total = subtotal + deliveryFee;
+
+  const handleCepSearch = async () => {
+    const cleanCep = cep.replace(/\D/g, '');
+    if (cleanCep.length !== 8) {
+      alert('Por favor, insira um CEP válido com 8 dígitos.');
+      return;
+    }
+
+    setIsSearchingCep(true);
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+      const data = await response.json();
+
+      if (data.erro) {
+        alert('CEP não encontrado. Por favor, digite o endereço manualmente.');
+      } else {
+        const fullAddress = `${data.logradouro}, ${data.bairro}, ${data.localidade} - ${data.uf}`;
+        setCustomer(prev => ({ ...prev, address: fullAddress }));
+        // Foco sugestivo no campo de endereço para o usuário adicionar o número
+      }
+    } catch (error) {
+      console.error('Erro ao buscar CEP:', error);
+      alert('Erro ao buscar o CEP. Tente novamente ou preencha manualmente.');
+    } finally {
+      setIsSearchingCep(false);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,41 +83,41 @@ const Checkout: React.FC<CheckoutProps> = ({ items, subtotal, onSubmit, onBack }
     <div className="max-w-4xl mx-auto py-8 px-4">
        <button onClick={onBack} className="flex items-center gap-3 text-black font-black uppercase text-[10px] tracking-[0.3em] mb-10 hover:text-ferrari transition-all group text-shadow-gray">
          <i className="fas fa-arrow-left-long transform group-hover:-translate-x-2 transition-transform"></i>
-         Revisar Carrinho
+         Ajustar Pedido
        </button>
 
        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-5 gap-12">
          <div className="lg:col-span-3 space-y-10 fade-in-up">
            
-           {/* Card: Identificação */}
+           {/* Card: Dados do Cliente */}
            <div className="bg-white rounded-[2.5rem] p-10 shadow-sm border border-gray-100 relative overflow-hidden">
              <div className="absolute top-0 right-0 p-8 opacity-5">
-               <i className="fas fa-id-card-clip text-8xl"></i>
+               <i className="fas fa-user-gear text-8xl"></i>
              </div>
              <div className="flex items-center gap-5 mb-10">
                <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-ferrari shadow-inner border border-gray-100">
-                 <i className="fas fa-user-check text-2xl"></i>
+                 <i className="fas fa-user-tag text-2xl"></i>
                </div>
-               <h3 className={`text-xl font-heading ${textClass}`}>Dados Pessoais</h3>
+               <h3 className={`text-xl font-heading ${textClass}`}>Quem Recebe?</h3>
              </div>
              
              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                <div className="space-y-3">
                  <label className={`text-[10px] tracking-widest pl-4 flex items-center gap-2 ${textClass}`}>
-                   <i className="fas fa-signature text-ferrari"></i> Nome Completo
+                   <i className="fas fa-font text-ferrari"></i> Nome Completo
                  </label>
                  <input 
                   type="text" 
                   value={customer.name} 
                   onChange={e => setCustomer({...customer, name: e.target.value})}
                   required
-                  placeholder="Seu nome aqui"
-                  className="w-full bg-slate-50 border-2 border-transparent rounded-2xl p-5 font-bold text-black focus:border-ferrari outline-none transition-all shadow-inner" 
+                  placeholder="DIGITE SEU NOME"
+                  className="w-full bg-slate-50 border-2 border-transparent rounded-2xl p-5 font-black text-black uppercase focus:border-ferrari outline-none transition-all shadow-inner" 
                  />
                </div>
                <div className="space-y-3">
                  <label className={`text-[10px] tracking-widest pl-4 flex items-center gap-2 ${textClass}`}>
-                   <i className="fab fa-whatsapp text-green-500 text-lg"></i> Celular / Whats
+                   <i className="fab fa-whatsapp text-green-600 text-lg"></i> WhatsApp
                  </label>
                  <input 
                   type="tel" 
@@ -96,53 +125,83 @@ const Checkout: React.FC<CheckoutProps> = ({ items, subtotal, onSubmit, onBack }
                   onChange={e => setCustomer({...customer, phone: e.target.value})}
                   required
                   placeholder="(00) 00000-0000"
-                  className="w-full bg-slate-50 border-2 border-transparent rounded-2xl p-5 font-bold text-black focus:border-ferrari outline-none transition-all shadow-inner" 
+                  className="w-full bg-slate-50 border-2 border-transparent rounded-2xl p-5 font-black text-black focus:border-ferrari outline-none transition-all shadow-inner" 
                  />
                </div>
              </div>
            </div>
 
-           {/* Card: Entrega */}
+           {/* Card: Logística de Entrega */}
            <div className="bg-white rounded-[2.5rem] p-10 shadow-sm border border-gray-100">
              <div className="flex items-center gap-5 mb-10">
                <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-ferrari shadow-inner border border-gray-100">
-                 <i className="fas fa-map-location-dot text-2xl"></i>
+                 <i className="fas fa-route text-2xl"></i>
                </div>
-               <h3 className={`text-xl font-heading ${textClass}`}>Recebimento</h3>
+               <h3 className={`text-xl font-heading ${textClass}`}>Logística</h3>
              </div>
              
              <div className="grid grid-cols-2 gap-6 mb-8">
                <button 
                 type="button"
                 onClick={() => setCustomer({...customer, deliveryType: 'delivery'})}
-                className={`p-8 rounded-[2rem] border-2 transition-all flex flex-col items-center gap-4 ${customer.deliveryType === 'delivery' ? 'border-ferrari bg-ferrari/5 shadow-lg scale-105' : 'border-gray-50 grayscale opacity-40'}`}
+                className={`p-8 rounded-[2rem] border-2 transition-all flex flex-col items-center gap-4 ${customer.deliveryType === 'delivery' ? 'border-ferrari bg-ferrari/5 shadow-lg scale-105' : 'border-gray-50 grayscale opacity-30'}`}
                >
-                 <i className="fas fa-truck-ramp-box text-4xl text-ferrari"></i>
-                 <span className={textClass}>Delivery</span>
+                 <i className="fas fa-motorcycle text-4xl text-ferrari"></i>
+                 <span className={textClass}>Receber em Casa</span>
                </button>
                <button 
                 type="button"
                 onClick={() => setCustomer({...customer, deliveryType: 'pickup'})}
-                className={`p-8 rounded-[2rem] border-2 transition-all flex flex-col items-center gap-4 ${customer.deliveryType === 'pickup' ? 'border-ferrari bg-ferrari/5 shadow-lg scale-105' : 'border-gray-50 grayscale opacity-40'}`}
+                className={`p-8 rounded-[2rem] border-2 transition-all flex flex-col items-center gap-4 ${customer.deliveryType === 'pickup' ? 'border-ferrari bg-ferrari/5 shadow-lg scale-105' : 'border-gray-50 grayscale opacity-30'}`}
                >
-                 <i className="fas fa-hand-holding-heart text-4xl text-ferrari"></i>
-                 <span className={textClass}>Retirada</span>
+                 <i className="fas fa-shop-lock text-4xl text-ferrari"></i>
+                 <span className={textClass}>Retirar na Loja</span>
                </button>
              </div>
 
              {customer.deliveryType === 'delivery' && (
-               <div className="space-y-3 animate-fade-in-up">
-                 <label className={`text-[10px] tracking-widest pl-4 flex items-center gap-2 ${textClass}`}>
-                   <i className="fas fa-house-laptop text-ferrari"></i> Onde Entregamos?
-                 </label>
-                 <textarea 
-                  value={customer.address} 
-                  onChange={e => setCustomer({...customer, address: e.target.value})}
-                  required={customer.deliveryType === 'delivery'}
-                  placeholder="Rua, Número, Bairro e Referência..."
-                  rows={3}
-                  className="w-full bg-slate-50 border-2 border-transparent rounded-2xl p-6 font-bold text-black focus:border-ferrari outline-none transition-all shadow-inner resize-none" 
-                 />
+               <div className="space-y-6 animate-fade-in-up">
+                 {/* Busca por CEP */}
+                 <div className="space-y-3">
+                    <label className={`text-[10px] tracking-widest pl-4 flex items-center gap-2 ${textClass}`}>
+                      <i className="fas fa-magnifying-glass-location text-ferrari"></i> Buscar por CEP
+                    </label>
+                    <div className="flex gap-3">
+                      <input 
+                        type="text" 
+                        value={cep} 
+                        onChange={e => setCep(e.target.value)}
+                        placeholder="00000-000"
+                        maxLength={9}
+                        className="flex-grow bg-slate-50 border-2 border-transparent rounded-2xl p-5 font-black text-black focus:border-ferrari outline-none transition-all shadow-inner" 
+                      />
+                      <button 
+                        type="button"
+                        onClick={handleCepSearch}
+                        disabled={isSearchingCep}
+                        className="bg-onyx text-white px-8 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-ferrari transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
+                        {isSearchingCep ? <i className="fas fa-spinner animate-spin"></i> : <i className="fas fa-search"></i>}
+                        Buscar
+                      </button>
+                    </div>
+                 </div>
+
+                 {/* Endereço Manual / Resultante do CEP */}
+                 <div className="space-y-3">
+                   <label className={`text-[10px] tracking-widest pl-4 flex items-center gap-2 ${textClass}`}>
+                     <i className="fas fa-location-dot text-ferrari"></i> Onde Entregamos?
+                   </label>
+                   <textarea 
+                    value={customer.address} 
+                    onChange={e => setCustomer({...customer, address: e.target.value})}
+                    required={customer.deliveryType === 'delivery'}
+                    placeholder="DIGITE O ENDEREÇO, NÚMERO E BAIRRO..."
+                    rows={3}
+                    className="w-full bg-slate-50 border-2 border-transparent rounded-2xl p-6 font-black text-black uppercase focus:border-ferrari outline-none transition-all shadow-inner resize-none" 
+                   />
+                   <p className="text-[9px] text-gray-400 font-bold uppercase px-4 italic">*Não esqueça de incluir o número e complemento.</p>
+                 </div>
                </div>
              )}
            </div>
@@ -151,25 +210,25 @@ const Checkout: React.FC<CheckoutProps> = ({ items, subtotal, onSubmit, onBack }
            <div className="bg-white rounded-[2.5rem] p-10 shadow-sm border border-gray-100">
              <div className="flex items-center gap-5 mb-10">
                <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-ferrari shadow-inner border border-gray-100">
-                 <i className="fas fa-hand-holding-dollar text-2xl"></i>
+                 <i className="fas fa-credit-card text-2xl"></i>
                </div>
-               <h3 className={`text-xl font-heading ${textClass}`}>Pagamento</h3>
+               <h3 className={`text-xl font-heading ${textClass}`}>Forma de Pagamento</h3>
              </div>
              
-             <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                 {[
-                  { id: PaymentMethod.PIX, label: 'PIX', icon: 'fa-bolt-lightning' },
+                  { id: PaymentMethod.PIX, label: 'PIX (Rápido)', icon: 'fa-bolt' },
                   { id: PaymentMethod.CARD, label: 'Cartão', icon: 'fa-credit-card' },
-                  { id: PaymentMethod.CASH, label: 'Dinheiro', icon: 'fa-sack-dollar' }
+                  { id: PaymentMethod.CASH, label: 'Dinheiro', icon: 'fa-money-bill-1' }
                 ].map(p => (
                   <button 
                     key={p.id}
                     type="button"
                     onClick={() => setPaymentMethod(p.id)}
-                    className={`flex items-center gap-4 p-6 rounded-2xl border-2 transition-all ${paymentMethod === p.id ? 'border-ferrari bg-ferrari/5 shadow-md scale-105' : 'border-gray-50 hover:bg-gray-50'}`}
+                    className={`flex items-center gap-4 p-5 rounded-2xl border-2 transition-all ${paymentMethod === p.id ? 'border-ferrari bg-ferrari/5 shadow-md scale-105' : 'border-gray-50 hover:bg-gray-50'}`}
                   >
-                    <i className={`fas ${p.icon} text-xl ${paymentMethod === p.id ? 'text-ferrari' : 'text-gray-300'}`}></i>
-                    <span className={`${textClass} text-[10px]`}>{p.label}</span>
+                    <i className={`fas ${p.icon} text-lg ${paymentMethod === p.id ? 'text-ferrari' : 'text-gray-300'}`}></i>
+                    <span className={`${textClass} text-[9px]`}>{p.label}</span>
                   </button>
                 ))}
              </div>
@@ -177,13 +236,13 @@ const Checkout: React.FC<CheckoutProps> = ({ items, subtotal, onSubmit, onBack }
              {paymentMethod === PaymentMethod.PIX && (
                <div className="space-y-6 animate-fade-in-up p-8 bg-slate-50 rounded-[2rem] border border-gray-100">
                   <div className="flex items-center gap-6">
-                    <div className="w-24 h-24 bg-white p-3 rounded-2xl shadow-md shrink-0 border border-gray-200">
-                      <img src="https://gerarqrcodepix.com.br/api/v1?nome=Barao%20do%20Espetinho&cidade=Sao%20Paulo&chave=CONTATO@BARAODOESPETINHO.COM&valor=&saida=qr" alt="QR Code" className="w-full h-full" />
+                    <div className="w-24 h-24 bg-white p-2 rounded-2xl shadow-md shrink-0 border border-gray-100">
+                      <img src="https://gerarqrcodepix.com.br/api/v1?nome=Barao%20do%20Espetinho&cidade=Sao%20Paulo&chave=CONTATO@BARAODOESPETINHO.COM&valor=&saida=qr" alt="PIX" className="w-full h-full" />
                     </div>
                     <div>
-                      <p className={`text-[10px] mb-1 ${textClass} text-ferrari`}>Pix Garantido</p>
-                      <p className={textClass + " text-sm"}>CNPJ: 12.345.678/0001-90</p>
-                      <button type="button" className={`text-[9px] mt-2 underline ${textClass}`}>Copiar Código</button>
+                      <p className={`text-[10px] mb-1 ${textClass} text-ferrari`}>Pagamento Instantâneo</p>
+                      <p className={textClass + " text-sm"}>Chave: 12.345.678/0001-90</p>
+                      <button type="button" className={`text-[9px] mt-2 underline ${textClass}`}>Copiar Código Pix</button>
                     </div>
                   </div>
                   <div className="space-y-3 pt-4 border-t border-gray-200">
@@ -192,8 +251,8 @@ const Checkout: React.FC<CheckoutProps> = ({ items, subtotal, onSubmit, onBack }
                       type="text" 
                       value={payerName} 
                       onChange={e => setPayerName(e.target.value)}
-                      placeholder="Nome impresso no comprovante"
-                      className="w-full bg-white border-none rounded-2xl p-5 font-bold text-black focus:ring-4 focus:ring-ferrari/10 outline-none shadow-sm" 
+                      placeholder="COMO APARECE NO COMPROVANTE"
+                      className="w-full bg-white border-none rounded-2xl p-5 font-black text-black uppercase focus:ring-4 focus:ring-ferrari/10 outline-none shadow-sm" 
                     />
                   </div>
                </div>
@@ -201,15 +260,15 @@ const Checkout: React.FC<CheckoutProps> = ({ items, subtotal, onSubmit, onBack }
 
              {paymentMethod === PaymentMethod.CASH && (
                 <div className="space-y-3 animate-fade-in-up">
-                  <label className={`text-[10px] pl-4 ${textClass}`}>Precisa de Troco?</label>
+                  <label className={`text-[10px] pl-4 ${textClass}`}>Troco para quanto?</label>
                   <div className="relative">
-                    <i className="fas fa-coins absolute left-6 top-1/2 -translate-y-1/2 text-ferrari"></i>
+                    <i className="fas fa-hand-holding-dollar absolute left-6 top-1/2 -translate-y-1/2 text-ferrari"></i>
                     <input 
                       type="number" 
                       value={changeFor} 
                       onChange={e => setChangeFor(e.target.value)}
-                      placeholder="Troco para quanto?"
-                      className="w-full bg-slate-50 border-2 border-transparent rounded-2xl p-5 pl-14 font-bold text-black focus:border-ferrari outline-none transition-all shadow-inner" 
+                      placeholder="EX: 100,00"
+                      className="w-full bg-slate-50 border-2 border-transparent rounded-2xl p-5 pl-14 font-black text-black focus:border-ferrari outline-none transition-all shadow-inner" 
                     />
                   </div>
                 </div>
@@ -217,12 +276,12 @@ const Checkout: React.FC<CheckoutProps> = ({ items, subtotal, onSubmit, onBack }
            </div>
          </div>
 
-         {/* Painel Lateral de Resumo */}
+         {/* Painel Lateral: Resumo Financeiro */}
          <div className="lg:col-span-2">
             <div className="bg-white rounded-[3rem] p-10 text-black sticky top-24 shadow-2xl border border-gray-100 overflow-hidden fade-in-up" style={{animationDelay: '0.3s'}}>
               
               <h3 className={`text-xl mb-8 flex items-center gap-3 ${textClass}`}>
-                <i className="fas fa-file-invoice text-ferrari"></i> Conferência
+                <i className="fas fa-receipt text-ferrari"></i> Fechamento
               </h3>
               
               <div className="max-h-60 overflow-y-auto mb-10 pr-2 space-y-5 no-scrollbar border-b border-gray-100 pb-8">
@@ -239,16 +298,16 @@ const Checkout: React.FC<CheckoutProps> = ({ items, subtotal, onSubmit, onBack }
 
               <div className="space-y-5 mb-10">
                 <div className="flex justify-between items-center">
-                  <span className={`text-xs ${textClass}`}>Produtos</span>
+                  <span className={`text-xs ${textClass}`}>Subtotal Itens</span>
                   <span className={textClass}>R$ {subtotal.toFixed(2).replace('.', ',')}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className={`text-xs ${textClass}`}>Entrega</span>
+                  <span className={`text-xs ${textClass}`}>Taxa Logística</span>
                   <span className={textClass}>R$ {deliveryFee.toFixed(2).replace('.', ',')}</span>
                 </div>
-                <div className="pt-6 border-t border-gray-100 flex justify-between items-end">
+                <div className="pt-6 border-t-2 border-onyx flex justify-between items-end">
                   <div className="flex flex-col">
-                    <span className={`text-[10px] mb-1 ${textClass} text-ferrari`}>VALOR TOTAL</span>
+                    <span className={`text-[10px] mb-1 ${textClass} text-ferrari`}>TOTAL A PAGAR</span>
                     <span className={`text-4xl font-black ${textClass.replace('text-black', '')}`}>R$ {total.toFixed(2).replace('.', ',')}</span>
                   </div>
                 </div>
@@ -258,8 +317,8 @@ const Checkout: React.FC<CheckoutProps> = ({ items, subtotal, onSubmit, onBack }
                 type="submit"
                 className="w-full bg-black text-white py-6 rounded-[2rem] font-black uppercase tracking-[0.3em] text-xs hover:bg-ferrari transition-all shadow-xl shadow-black/30 transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-4 group"
               >
-                Concluir Pedido
-                <i className="fas fa-circle-check group-hover:scale-125 transition-transform"></i>
+                Confirmar Pedido
+                <i className="fas fa-fire-flame-simple group-hover:scale-125 transition-transform"></i>
               </button>
               
               <div className="mt-8 p-6 bg-slate-50 rounded-2xl flex items-center gap-4 border border-gray-100">
@@ -267,7 +326,7 @@ const Checkout: React.FC<CheckoutProps> = ({ items, subtotal, onSubmit, onBack }
                   <i className="fas fa-shield-halved"></i>
                 </div>
                 <p className={`text-[9px] leading-relaxed font-bold uppercase tracking-wider ${textClass}`}>
-                  Sua compra está segura. Qualidade premium garantida pelo Barão.
+                  Ambiente Seguro. A melhor brasa e a entrega mais rápida da região.
                 </p>
               </div>
             </div>

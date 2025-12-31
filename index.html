@@ -37,7 +37,7 @@
         
         /* Sombra cinza otimizada para texto preto */
         .text-shadow-gray {
-            text-shadow: 2px 2px 4px rgba(128, 128, 128, 0.6);
+            text-shadow: 2px 2px 4px rgba(128, 128, 128, 0.45);
         }
 
         .glass-panel {
@@ -75,9 +75,9 @@
 <script type="importmap">
 {
   "imports": {
-    "react/": "https://esm.sh/react@^19.2.3/",
     "react": "https://esm.sh/react@^19.2.3",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
     "recharts": "https://esm.sh/recharts@^3.6.0"
   }
 }
@@ -85,7 +85,6 @@
 </head>
 <body class="text-gray-900 overflow-x-hidden">
     <div id="root"></div>
-    <!-- Caminho relativo "./" para garantir que o Vite encontre o arquivo no Vercel -->
     <script type="module" src="./index.tsx"></script>
 </body>
 </html>
