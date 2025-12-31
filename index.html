@@ -1,0 +1,124 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barão do Espetinho | O Melhor Churrasco da Região</title>
+    <meta name="description" content="Peça os melhores espetinhos artesanais. Alcatra, Picanha, Queijo Coalho e muito mais. Entrega rápida e qualidade premium.">
+    <meta name="keywords" content="espetinho, churrasco, delivery, barão do espetinho, carne, picanha, delivery espetinho">
+    <meta property="og:title" content="Barão do Espetinho - Menu Digital">
+    <meta property="og:description" content="Os melhores espetinhos da cidade no conforto da sua casa.">
+    <meta property="og:type" content="website">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ferrari: {
+                            DEFAULT: '#FF2800',
+                            dark: '#D32F2F',
+                            light: '#FF4D4D'
+                        },
+                        onyx: '#1A1A1A'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        heading: ['Montserrat', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8f9fa; }
+        .font-heading { font-family: 'Montserrat', sans-serif; }
+        
+        .text-shadow-gray {
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Glassmorphism Classes */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        /* Animated Header Gradient */
+        .header-animated {
+            background: linear-gradient(90deg, #FF2800, #1A1A1A, #D32F2F, #FF2800);
+            background-size: 400% 100%;
+            animation: gradient-shift 15s ease infinite;
+        }
+
+        @keyframes gradient-shift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Micro-interactions & Transitions */
+        .interactive-element {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card-elevated:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+        }
+
+        /* FadeIn Animations */
+        .fade-in-up {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #FF2800; border-radius: 4px; }
+        
+        html { scroll-behavior: smooth; }
+        
+        /* Field Validation Feedback */
+        .form-input-premium:focus {
+            box-shadow: 0 0 0 4px rgba(255, 40, 0, 0.1);
+            border-color: #FF2800 !important;
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "recharts": "https://esm.sh/recharts@^3.6.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
+  }
+}
+</script>
+</head>
+<body class="text-gray-900 overflow-x-hidden selection:bg-ferrari selection:text-white">
+    <div id="root"></div>
+</body>
+</html>
