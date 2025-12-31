@@ -6,13 +6,13 @@ export enum Category {
   SIDE = 'acompanhamento'
 }
 
+// Fix: Adding PENDING and AWAITING_PAYMENT to OrderStatus enum as they are referenced in Checkout.tsx
 export enum OrderStatus {
-  AWAITING_PAYMENT = 'awaiting_payment',
-  PENDING = 'pending',
-  PREPARING = 'preparing',
-  READY = 'ready',
-  DELIVERED = 'delivered',
-  CANCELLED = 'cancelled'
+  PENDING = 'pendente',
+  AWAITING_PAYMENT = 'aguardando_pagamento',
+  PREPARING = 'preparando',
+  SHIPPED = 'enviado',
+  CANCELLED = 'cancelado'
 }
 
 export enum PaymentMethod {
@@ -30,6 +30,7 @@ export interface Product {
   description: string;
   stock: number;
   image: string;
+  weight?: string;
 }
 
 export interface CartItem extends Product {
