@@ -17,10 +17,11 @@ interface AdminPanelProps {
 const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, setOrders, logo, setLogo, onLogout }) => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'products' | 'orders' | 'inventory' | 'store'>('dashboard');
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const modalFileInputRef = useRef<HTMLInputElement>(null);
 
-  // Form State para Novo Produto
+  // Form State para Novo/Editar Produto
   const [newProduct, setNewProduct] = useState<Partial<Product>>({
     category: Category.TRADITIONAL,
     name: '',
@@ -50,16 +51,43 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
     return { revenue, cost, profit, totalOrders: orders.length, salesByProduct };
   }, [orders, products]);
 
-  const handleAddProduct = (e: React.FormEvent) => {
+  const handleSaveProduct = (e: React.FormEvent) => {
     e.preventDefault();
-    const productToAdd: Product = {
-      ...newProduct as Product,
-      id: Date.now().toString(),
-      description: newProduct.description || `${newProduct.name} de qualidade superior.`
-    };
-    setProducts(prev => [...prev, productToAdd]);
+    
+    if (editingProductId) {
+      setProducts(prev => prev.map(p => 
+        p.id === editingProductId ? { ...p, ...newProduct as Product } : p
+      ));
+    } else {
+      const productToAdd: Product = {
+        ...newProduct as Product,
+        id: Date.now().toString(),
+        description: newProduct.description || `${newProduct.name} de qualidade superior.`
+      };
+      setProducts(prev => [...prev, productToAdd]);
+    }
+    
+    closeModal();
+  };
+
+  const openEditModal = (product: Product) => {
+    setEditingProductId(product.id);
+    setNewProduct(product);
+    setIsProductModalOpen(true);
+  };
+
+  const closeModal = () => {
     setIsProductModalOpen(false);
-    setNewProduct({ category: Category.TRADITIONAL, name: '', stock: 0, cost: 0, price: 0, weight: '', image: 'https://picsum.photos/seed/espeto/400/300' });
+    setEditingProductId(null);
+    setNewProduct({ 
+      category: Category.TRADITIONAL, 
+      name: '', 
+      stock: 0, 
+      cost: 0, 
+      price: 0, 
+      weight: '', 
+      image: 'https://picsum.photos/seed/espeto/400/300' 
+    });
   };
 
   const handleProductImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -152,30 +180,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
                  <span className={`text-3xl font-black text-onyx tracking-tighter`}>{stat.val}</span>
                </div>
              ))}
-
-             <div className="md:col-span-4 bg-white p-10 rounded-[3rem] shadow-sm border border-gray-100">
-               <h3 className="text-xl font-black uppercase tracking-widest text-onyx mb-10 flex items-center gap-4">
-                 <i className="fas fa-crown text-ferrari"></i> Ranking de Vendas
-               </h3>
-               <div className="h-80 w-full">
-                 <ResponsiveContainer width="100%" height="100%">
-                   <BarChart data={stats.salesByProduct}>
-                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 800, fill: '#1A1A1A' }} />
-                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 800, fill: '#9ca3af' }} />
-                     <Tooltip 
-                        contentStyle={{ borderRadius: '1.5rem', border: 'none', boxShadow: '0 20px 40px -10px rgba(0,0,0,0.1)', fontWeight: 900, textTransform: 'uppercase', fontSize: '10px' }}
-                        cursor={{ fill: '#f8f9fa' }}
-                     />
-                     <Bar dataKey="quantity" radius={[12, 12, 0, 0]}>
-                       {stats.salesByProduct.map((entry, index) => (
-                         <Cell key={`cell-${index}`} fill={index === 0 ? '#FF2800' : '#1A1A1A'} />
-                       ))}
-                     </Bar>
-                   </BarChart>
-                 </ResponsiveContainer>
-               </div>
-             </div>
           </div>
         )}
 
@@ -196,7 +200,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {products.map(product => (
-                <div key={product.id} className="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-100 flex items-center gap-6 group hover:border-ferrari transition-colors">
+                <div key={product.id} className="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-100 flex items-center gap-6 group hover:border-ferrari transition-colors relative">
                   <img src={product.image} className="w-20 h-20 rounded-2xl object-cover shadow-md group-hover:rotate-3 transition-transform" />
                   <div className="flex-grow">
                     <h4 className="font-black text-onyx uppercase tracking-tighter text-lg leading-none mb-1">{product.name}</h4>
@@ -212,6 +216,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
                       </div>
                     </div>
                   </div>
+                  <button 
+                    onClick={() => openEditModal(product)}
+                    className="absolute top-4 right-4 w-10 h-10 bg-onyx text-white rounded-xl flex items-center justify-center hover:bg-ferrari transition-colors shadow-lg shadow-black/10"
+                  >
+                    <i className="fas fa-edit text-xs"></i>
+                  </button>
                 </div>
               ))}
             </div>
@@ -241,9 +251,28 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
                       </td>
                       <td className="p-8 border-b border-gray-100">
                         <p className="font-black text-onyx text-base mb-1 uppercase tracking-tighter">{order.customer.name}</p>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest flex items-center gap-2">
-                           <i className="fas fa-phone text-[9px]"></i> {order.customer.phone}
-                        </p>
+                        <div className="flex flex-col gap-2">
+                          {/* WhatsApp Link Direto Resturado */}
+                          <a href={`https://wa.me/55${order.customer.phone.replace(/\D/g,'')}`} target="_blank" rel="noopener noreferrer" className="text-[10px] text-green-600 font-black uppercase tracking-widest flex items-center gap-2">
+                             <i className="fab fa-whatsapp text-sm"></i> {order.customer.phone}
+                          </a>
+                          {order.customer.deliveryType === 'delivery' && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-[9px] font-bold text-gray-400 uppercase max-w-[150px] truncate">{order.customer.address}</span>
+                              {/* Botão MAPA Resturado conforme solicitado */}
+                              {order.mapsUrl && (
+                                <a 
+                                  href={order.mapsUrl} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="bg-onyx text-white p-2 rounded-lg text-[9px] font-black uppercase flex items-center gap-2 hover:bg-ferrari transition-colors"
+                                >
+                                  <i className="fas fa-location-dot"></i> MAPA
+                                </a>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </td>
                       <td className="p-8 border-b border-gray-100">
                         <div className="text-xs font-bold text-gray-600 space-y-1">
@@ -257,7 +286,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
                       </td>
                       <td className="p-8 border-b border-gray-100">
                         <div className="flex justify-center">
-                          {/* Fix: Added all available OrderStatus options to the select menu */}
                           <select 
                             value={order.status}
                             onChange={(e) => updateOrderStatus(order.id, e.target.value as OrderStatus)}
@@ -306,15 +334,15 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
         )}
       </div>
 
-      {/* Modal Novo Produto */}
+      {/* Modal Novo/Editar Produto */}
       {isProductModalOpen && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
           <div className="bg-white w-full max-w-2xl rounded-[3rem] shadow-2xl overflow-hidden animate-fade-in-up border border-white/20">
             <div className="h-2 header-animated"></div>
-            <form onSubmit={handleAddProduct} className="p-10 space-y-8">
+            <form onSubmit={handleSaveProduct} className="p-10 space-y-8">
               <div className="flex justify-between items-center">
-                <h3 className={`text-2xl ${textClass}`}>Cadastrar Espetinho</h3>
-                <button type="button" onClick={() => setIsProductModalOpen(false)} className="text-gray-300 hover:text-ferrari transition-colors"><i className="fas fa-times text-2xl"></i></button>
+                <h3 className={`text-2xl ${textClass}`}>{editingProductId ? 'Editar Espetinho' : 'Cadastrar Espetinho'}</h3>
+                <button type="button" onClick={closeModal} className="text-gray-300 hover:text-ferrari transition-colors"><i className="fas fa-times text-2xl"></i></button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -404,7 +432,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
                 type="submit"
                 className="w-full bg-onyx text-white py-6 rounded-[2rem] font-black uppercase tracking-[0.3em] text-xs hover:bg-ferrari transition-all shadow-xl shadow-onyx/20"
               >
-                Salvar Produto e Atualizar Cardápio
+                {editingProductId ? 'Atualizar Produto' : 'Salvar Produto e Atualizar Cardápio'}
               </button>
             </form>
           </div>
