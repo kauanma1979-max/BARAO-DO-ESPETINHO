@@ -14,7 +14,7 @@ interface AdminPanelProps {
 }
 
 const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, setOrders, logo, setLogo, onLogout }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'products' | 'orders' | 'inventory' | 'store'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'orders' | 'inventory' | 'store'>('dashboard');
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -108,6 +108,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
     setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o));
   };
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear().toString().slice(-2);
+    return `${day}/${month}/${year}`;
+  };
+
   const textClass = "text-black text-shadow-gray font-black uppercase tracking-tighter";
 
   return (
@@ -130,7 +138,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
       <div className="flex gap-4 overflow-x-auto no-scrollbar mb-12 -mx-4 px-4">
         {[
           { id: 'dashboard', label: 'Resumo Geral', icon: 'fa-chart-line' },
-          { id: 'orders', label: 'Pedidos', icon: 'fa-receipt' },
+          { id: 'orders', label: 'Pedido', icon: 'fa-receipt' },
           { id: 'inventory', label: 'Estoque', icon: 'fa-boxes-stacked' },
           { id: 'store', label: 'Marca', icon: 'fa-palette' },
         ].map(tab => (
@@ -169,7 +177,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
                <div className="flex items-center justify-between mb-16">
                  <div>
                    <h3 className="text-4xl font-black uppercase tracking-tighter text-onyx">Ranking de Vendas</h3>
-                   <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mt-2">Desempenho detalhado por item e categoria</p>
+                   <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mt-2">Desempenho por item e categoria</p>
                  </div>
                  <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center text-ferrari shadow-inner">
                    <i className="fas fa-ranking-star text-4xl"></i>
@@ -223,7 +231,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
             <div className="flex justify-between items-center bg-white p-12 rounded-[3.5rem] shadow-sm border border-gray-100">
               <div>
                 <h3 className="text-4xl font-black uppercase tracking-tighter text-onyx">Gestão de Estoque</h3>
-                <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mt-2">Controle total de insumos e produtos</p>
+                <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mt-2">Controle de produtos do cardápio</p>
               </div>
               <button 
                 onClick={() => setIsProductModalOpen(true)}
@@ -287,7 +295,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
                   {orders.slice().reverse().map(order => (
                     <tr key={order.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="p-12 border-b border-gray-100">
-                        <span className="font-black text-ferrari tracking-tight text-3xl">#{order.id}</span>
+                        <div className="flex flex-col">
+                          <span className="font-black text-ferrari tracking-tight text-3xl">#{order.id}</span>
+                          <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">DATA: {formatDate(order.date)}</span>
+                        </div>
                       </td>
                       <td className="p-12 border-b border-gray-100">
                         <p className="font-black text-onyx text-xl mb-3 uppercase tracking-tighter">{order.customer.name}</p>
