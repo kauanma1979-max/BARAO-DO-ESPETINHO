@@ -190,10 +190,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50">
-                    <th className="p-8 text-[11px] font-black uppercase tracking-widest text-gray-400 border-b border-gray-100">Identificação</th>
-                    <th className="p-8 text-[11px] font-black uppercase tracking-widest text-gray-400 border-b border-gray-100">Cliente / Contato</th>
+                    <th className="p-8 text-[11px] font-black uppercase tracking-widest text-gray-400 border-b border-gray-100">ID / Hora</th>
+                    <th className="p-8 text-[11px] font-black uppercase tracking-widest text-gray-400 border-b border-gray-100">Cliente / Local</th>
                     <th className="p-8 text-[11px] font-black uppercase tracking-widest text-gray-400 border-b border-gray-100">Pedido</th>
-                    <th className="p-8 text-[11px] font-black uppercase tracking-widest text-gray-400 border-b border-gray-100">Status da Brasa</th>
+                    <th className="p-8 text-[11px] font-black uppercase tracking-widest text-gray-400 border-b border-gray-100">Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -207,9 +207,26 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
                       </td>
                       <td className="p-8 border-b border-gray-100">
                         <p className="font-black text-onyx text-base mb-1 uppercase tracking-tighter">{order.customer.name}</p>
-                        <a href={`https://wa.me/55${order.customer.phone.replace(/\D/g,'')}`} className="text-[10px] text-green-600 font-black uppercase tracking-widest flex items-center gap-2">
-                           <i className="fab fa-whatsapp"></i> {order.customer.phone}
-                        </a>
+                        <div className="flex flex-col gap-2">
+                          <a href={`https://wa.me/55${order.customer.phone.replace(/\D/g,'')}`} className="text-[10px] text-green-600 font-black uppercase tracking-widest flex items-center gap-2">
+                             <i className="fab fa-whatsapp text-sm"></i> {order.customer.phone}
+                          </a>
+                          {order.customer.deliveryType === 'delivery' && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-[9px] font-bold text-gray-400 uppercase max-w-[150px] truncate">{order.customer.address}</span>
+                              {order.mapsUrl && (
+                                <a 
+                                  href={order.mapsUrl} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="bg-onyx text-white p-2 rounded-lg text-[9px] font-black uppercase flex items-center gap-2 hover:bg-ferrari transition-colors"
+                                >
+                                  <i className="fas fa-location-dot"></i> MAPA
+                                </a>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </td>
                       <td className="p-8 border-b border-gray-100">
                         <div className="text-xs font-bold text-gray-600 space-y-1">
@@ -241,8 +258,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
             </div>
           </div>
         )}
-
-        {/* Other tabs remain largely the same but icons updated above */}
       </div>
     </div>
   );

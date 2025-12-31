@@ -55,4 +55,5 @@ export interface Order {
   paymentMethod: PaymentMethod;
   payerName?: string;
   changeFor?: number;
+  mapsUrl?: string;
 }

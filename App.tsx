@@ -9,6 +9,7 @@ import Checkout from './components/Checkout';
 import AdminPanel from './components/AdminPanel';
 import Footer from './components/Footer';
 import LoginModal from './components/LoginModal';
+import { GoogleGenAI } from "@google/genai";
 
 const App: React.FC = () => {
   const [view, setView] = useState<'catalog' | 'cart' | 'checkout' | 'admin' | 'success'>('catalog');
@@ -27,6 +28,7 @@ const App: React.FC = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [lastOrder, setLastOrder] = useState<Order | null>(null);
+  const [isGeneratingMap, setIsGeneratingMap] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('products', JSON.stringify(products));
@@ -67,15 +69,49 @@ const App: React.FC = () => {
     setCart(prev => prev.filter(i => i.id !== id));
   };
 
-  const handleCreateOrder = (order: Order) => {
-    setOrders(prev => [...prev, order]);
+  const handleCreateOrder = async (order: Order) => {
+    setIsGeneratingMap(true);
+    let mapsUrl = '';
+
+    // Buscar link do Google Maps via Gemini se for delivery
+    if (order.customer.deliveryType === 'delivery') {
+      try {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const response = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: `Localize o endereço no Google Maps e retorne o link de compartilhamento para: ${order.customer.address}`,
+          config: {
+            tools: [{ googleMaps: {} }],
+          },
+        });
+
+        // Tentar extrair a URI dos grounding chunks
+        const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+        if (chunks && chunks.length > 0) {
+          mapsUrl = chunks.find(chunk => chunk.maps?.uri)?.maps?.uri || '';
+        }
+
+        // Fallback caso a IA não retorne link direto
+        if (!mapsUrl) {
+          mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.customer.address)}`;
+        }
+      } catch (error) {
+        console.error("Erro ao gerar link do mapa:", error);
+        mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.customer.address)}`;
+      }
+    }
+
+    const enrichedOrder = { ...order, mapsUrl };
+    
+    setOrders(prev => [...prev, enrichedOrder]);
     setProducts(prev => prev.map(p => {
       const cartItem = order.items.find(i => i.id === p.id);
       if (cartItem) return { ...p, stock: p.stock - cartItem.quantity };
       return p;
     }));
     setCart([]);
-    setLastOrder(order);
+    setLastOrder(enrichedOrder);
+    setIsGeneratingMap(false);
     setView('success');
   };
 
@@ -140,10 +176,27 @@ const App: React.FC = () => {
                </div>
                <h1 className="text-4xl font-black mb-4 font-heading text-onyx uppercase tracking-tight">Pedido Confirmado!</h1>
                <p className="text-xl text-gray-600 mb-8">Obrigado pela preferência, {lastOrder.customer.name.split(' ')[0]}!</p>
-               <div className="bg-slate-50 p-6 rounded-2xl mb-8 inline-block">
-                 <p className="text-gray-500 uppercase text-xs font-bold tracking-widest mb-1">NÚMERO DO PEDIDO</p>
-                 <p className="text-3xl font-black text-ferrari">#{lastOrder.id}</p>
+               
+               <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8">
+                 <div className="bg-slate-50 p-6 rounded-2xl flex-1">
+                   <p className="text-gray-500 uppercase text-xs font-bold tracking-widest mb-1">NÚMERO DO PEDIDO</p>
+                   <p className="text-3xl font-black text-ferrari">#{lastOrder.id}</p>
+                 </div>
+                 {lastOrder.mapsUrl && (
+                    <a 
+                      href={lastOrder.mapsUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="bg-slate-50 p-6 rounded-2xl flex-1 flex flex-col items-center justify-center hover:bg-slate-100 transition-colors group"
+                    >
+                      <p className="text-gray-500 uppercase text-xs font-bold tracking-widest mb-1">LOCAL DE ENTREGA</p>
+                      <span className="text-onyx font-black flex items-center gap-2">
+                        <i className="fas fa-location-dot text-ferrari group-hover:scale-125 transition-transform"></i> VER NO MAPA
+                      </span>
+                    </a>
+                 )}
                </div>
+
                <button 
                 onClick={() => setView('catalog')}
                 className="block w-full sm:w-auto mx-auto bg-onyx text-white px-10 py-4 rounded-xl font-bold uppercase tracking-wider hover:bg-ferrari transition-all shadow-lg hover:shadow-ferrari/40 transform hover:-translate-y-1"
@@ -159,6 +212,16 @@ const App: React.FC = () => {
 
       {showLogin && <LoginModal onLogin={handleAdminAuth} onClose={() => setShowLogin(false)} />}
       
+      {/* Loading Overlay para geração do mapa */}
+      {isGeneratingMap && (
+        <div className="fixed inset-0 z-[100] bg-white/80 backdrop-blur-sm flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-20 h-20 border-4 border-slate-100 border-t-ferrari rounded-full animate-spin mx-auto mb-6"></div>
+            <p className="font-black text-onyx uppercase tracking-widest text-sm">Gerando Rota de Entrega...</p>
+          </div>
+        </div>
+      )}
+
       {/* Quick Access Mobile Tab Bar */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex justify-around items-center h-16 px-4 shadow-[0_-5px_20px_rgba(0,0,0,0.05)] z-40">
         <button onClick={() => setView('catalog')} className={`flex flex-col items-center gap-1 ${view === 'catalog' ? 'text-ferrari' : 'text-gray-400'}`}>
