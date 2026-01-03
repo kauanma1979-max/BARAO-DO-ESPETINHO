@@ -32,41 +32,70 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
     image: 'https://picsum.photos/seed/espeto/400/300'
   });
 
+  const categoryEmojis: Record<string, string> = {
+    [Category.TRADITIONAL]: '🥩',
+    [Category.SPECIAL]: '👑',
+    [Category.DRINK]: '🥤',
+    [Category.SIDE]: '🥣',
+    [Category.COAL]: '🔥',
+  };
+
   const stats = useMemo(() => {
-    const shippedOrders = orders.filter(o => o.status === OrderStatus.SHIPPED || o.status === OrderStatus.PREPARING);
-    const revenue = shippedOrders.reduce((acc, o) => acc + o.total, 0);
-    const cost = shippedOrders.reduce((acc, o) => {
+    const validOrders = orders.filter(o => o.status !== OrderStatus.CANCELLED);
+    const revenue = validOrders.reduce((acc, o) => acc + o.total, 0);
+    const cost = validOrders.reduce((acc, o) => {
       const orderCost = o.items.reduce((sum, item) => sum + (item.cost * item.quantity), 0);
       return acc + orderCost;
     }, 0);
     const profit = revenue - cost;
     
-    const salesData = products.map(p => {
-      const quantity = orders.filter(o => o.status !== OrderStatus.CANCELLED)
-        .reduce((acc, o) => acc + (o.items.find(i => i.id === p.id)?.quantity || 0), 0);
-      return { ...p, salesQty: quantity };
+    // Mapeamento de vendas reais
+    const salesMap = new Map<string, number>();
+    validOrders.forEach(order => {
+      order.items.forEach(item => {
+        salesMap.set(item.id, (salesMap.get(item.id) || 0) + item.quantity);
+      });
     });
 
-    const maxSales = Math.max(...salesData.map(s => s.salesQty), 1);
+    // Agrupamento por categoria (Excluindo Dicas)
+    const categoryGroups = Object.values(Category)
+      .filter(cat => cat !== Category.TIPS)
+      .map(cat => {
+        const items = products
+          .filter(p => p.category === cat)
+          .map(p => ({
+            name: p.name,
+            qty: salesMap.get(p.id) || 0,
+            emoji: categoryEmojis[cat] || '🍢'
+          }))
+          .sort((a, b) => b.qty - a.qty)
+          .slice(0, 5); // Top 5 de cada
 
-    return { revenue, cost, profit, totalOrders: orders.length, salesData, maxSales };
+        const maxQtyInCat = Math.max(...items.map(i => i.qty), 1);
+
+        return {
+          cat,
+          label: CATEGORY_LABELS[cat],
+          emoji: categoryEmojis[cat] || '🍢',
+          items,
+          maxQtyInCat
+        };
+      })
+      .filter(group => group.items.length > 0);
+
+    return { revenue, cost, profit, totalOrders: orders.length, categoryGroups };
   }, [orders, products]);
 
-  const salesByCategory = useMemo(() => {
-    const groups = {} as Record<Category, any[]>;
-    Object.values(Category).forEach(cat => {
-      groups[cat] = stats.salesData.filter(p => p.category === cat)
-        .sort((a, b) => b.salesQty - a.salesQty);
-    });
-    return groups;
-  }, [stats.salesData]);
-
+  // Fix: Defining groupedProducts which was missing but used in the inventory tab
   const groupedProducts = useMemo(() => {
-    const groups = {} as Record<Category, Product[]>;
-    Object.values(Category).forEach(cat => {
-      groups[cat] = products.filter(p => p.category === cat);
-    });
-    return groups;
+    return products.reduce((acc, product) => {
+      const cat = product.category;
+      if (!acc[cat]) {
+        acc[cat] = [];
+      }
+      acc[cat].push(product);
+      return acc;
+    }, {} as Record<string, Product[]>);
   }, [products]);
 
   const handleSaveProduct = (e: React.FormEvent) => {
@@ -94,28 +123,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
     setIsProductModalOpen(false);
     setEditingProductId(null);
     setNewProduct({ category: Category.TRADITIONAL, name: '', stock: 0, cost: 0, price: 0, weight: '', image: 'https://picsum.photos/seed/espeto/400/300' });
-  };
-
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 1024 * 1024) {
-        alert('Erro Crítico: A imagem é muito grande (Máximo 1MB). Reduza a imagem e tente novamente.');
-        e.target.value = '';
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        try {
-          const result = reader.result as string;
-          setLogo(result);
-        } catch (err) {
-          alert('Erro ao processar imagem.');
-        }
-      };
-      reader.readAsDataURL(file);
-    }
-    e.target.value = '';
   };
 
   const updateOrderStatus = (orderId: string, status: OrderStatus) => {
@@ -214,12 +221,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
       <div className="space-y-16">
         {activeTab === 'dashboard' && (
           <div className="space-y-16 animate-fade-in-up">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                {[
                  { label: 'FATURAMENTO', val: `R$ ${stats.revenue.toFixed(2)}`, icon: 'fa-sack-dollar' },
                  { label: 'LUCRO BRUTO', val: `R$ ${stats.profit.toFixed(2)}`, icon: 'fa-chart-simple' },
-                 { label: 'TOTAL PEDIDOS', val: stats.totalOrders, icon: 'fa-clipboard-list' },
-                 { label: 'MARGEM', val: `${stats.revenue > 0 ? ((stats.profit / stats.revenue) * 100).toFixed(1) : 0}%`, icon: 'fa-percent' }
+                 { label: 'TOTAL PEDIDOS', val: stats.totalOrders, icon: 'fa-clipboard-list' }
                ].map((stat, i) => (
                  <div key={i} className="bg-white p-10 rounded-[3rem] shadow-sm border border-gray-100 relative overflow-hidden group">
                    <div className="absolute -right-8 -bottom-8 opacity-5 group-hover:scale-125 transition-transform duration-1000">
@@ -229,6 +235,52 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
                    <span className="text-3xl font-black text-onyx tracking-tighter block">{stat.val}</span>
                  </div>
                ))}
+            </div>
+
+            <div className="space-y-12">
+              <h3 className="text-3xl font-black uppercase tracking-tighter flex items-center gap-4">
+                <i className="fas fa-chart-column text-ferrari"></i> Volume de Vendas por Categoria
+              </h3>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                {stats.categoryGroups.map(group => (
+                  <div key={group.cat} className="bg-white p-10 rounded-[4rem] shadow-sm border border-gray-100 flex flex-col h-[450px]">
+                    <div className="flex items-center justify-between mb-10">
+                      <div className="flex items-center gap-4">
+                        <span className="text-4xl">{group.emoji}</span>
+                        <h4 className="font-black text-onyx uppercase tracking-widest text-lg">{group.label}</h4>
+                      </div>
+                      <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Top Performance</span>
+                    </div>
+
+                    <div className="flex-grow flex items-end justify-around gap-4 pb-8 border-b border-gray-50">
+                      {group.items.map((item, idx) => (
+                        <div key={idx} className="flex flex-col items-center gap-4 group/bar w-full max-w-[60px]">
+                          <div className="relative w-full flex flex-col justify-end h-48">
+                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover/bar:opacity-100 transition-opacity bg-onyx text-white text-[10px] font-black px-2 py-1 rounded-lg z-10">
+                              {item.qty}un
+                            </div>
+                            <div 
+                              className="w-full bg-slate-50 rounded-2xl overflow-hidden border border-gray-100 group-hover/bar:border-ferrari/30 transition-all flex flex-col justify-end"
+                              style={{ height: '100%' }}
+                            >
+                              <div 
+                                className="w-full bg-onyx group-hover/bar:bg-ferrari transition-all duration-1000 ease-out relative"
+                                style={{ height: `${(item.qty / group.maxQtyInCat) * 100}%` }}
+                              >
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                              </div>
+                            </div>
+                          </div>
+                          <span className="text-[9px] font-black text-onyx uppercase tracking-tighter text-center line-clamp-2 h-6 overflow-hidden leading-none">
+                            {item.name}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -337,7 +389,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
                           </div>
                         </div>
                       </div>
-                      {/* Botão de Edição Reativado */}
                       <button 
                         onClick={() => openEditModal(product)}
                         className="absolute top-6 right-6 w-14 h-14 bg-onyx text-white rounded-2xl flex items-center justify-center hover:bg-ferrari transition-all shadow-xl shadow-black/10 z-10"
@@ -366,7 +417,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
               ) : (
                 <div className="w-56 h-56 bg-slate-200 rounded-[3rem] flex items-center justify-center text-slate-400 text-7xl shadow-inner"><i className="fas fa-camera"></i></div>
               )}
-              <input type="file" ref={fileInputRef} onChange={handleLogoUpload} accept="image/*" className="hidden" />
+              <input type="file" ref={fileInputRef} onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onloadend = () => setLogo(reader.result as string);
+                  reader.readAsDataURL(file);
+                }
+              }} accept="image/*" className="hidden" />
               <button onClick={() => fileInputRef.current?.click()} className="px-16 py-8 bg-onyx text-white rounded-[2.5rem] font-black uppercase text-base tracking-[0.2em] hover:bg-ferrari transition-all flex items-center gap-6 shadow-2xl">
                 <i className="fas fa-upload text-2xl"></i> ATUALIZAR LOGO
               </button>
@@ -375,7 +433,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
         )}
       </div>
 
-      {/* Modal de Edição Restaurado e Reativado */}
       {isProductModalOpen && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fade-in">
           <div className="bg-white w-full max-w-4xl rounded-[4rem] shadow-2xl overflow-hidden animate-fade-in-up border border-white/20">
