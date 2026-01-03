@@ -120,7 +120,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `backup_barao_espetinho_${new Date().toLocaleDateString().replace(/\//g, '-')}.json`;
+    link.download = `backup_tomasini_${new Date().toLocaleDateString().replace(/\//g, '-')}.json`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -150,7 +150,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
       };
       reader.readAsText(file);
     }
-    // Reset input value to allow the same file to be selected again if needed
     e.target.value = '';
   };
 
@@ -179,7 +178,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
              <i className="fas fa-sliders-h text-4xl"></i>
           </div>
           <div>
-            <h2 className="text-5xl font-black font-heading text-onyx uppercase tracking-tighter italic leading-none">Gestão <span className="text-ferrari">Barão</span></h2>
+            <h2 className="text-5xl font-black font-heading text-onyx uppercase tracking-tighter italic leading-none">Gestão <span className="text-ferrari">Tomasini</span></h2>
             <p className="text-gray-400 font-bold uppercase text-xs tracking-[0.5em] mt-3">Painel Administrativo Premium</p>
           </div>
         </div>

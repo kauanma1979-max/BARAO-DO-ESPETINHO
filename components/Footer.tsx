@@ -18,7 +18,7 @@ const Footer: React.FC<FooterProps> = ({ logo }) => {
                 <i className="fas fa-fire-alt text-2xl"></i>
               </div>
             )}
-            <h2 className="text-3xl font-black font-heading tracking-tighter uppercase leading-none">Barão do <span className="text-ferrari">Espetinho</span></h2>
+            <h2 className="text-3xl font-black font-heading tracking-tighter uppercase leading-none">Casa de Carnes <span className="text-ferrari">Tomasini</span></h2>
           </div>
           <p className="text-gray-500 max-w-sm font-bold text-xs leading-loose uppercase tracking-[0.2em]">
             Liderando a arte do churrasco artesanal. Qualidade premium, cortes selecionados e o verdadeiro sabor da brasa direto para você.
@@ -54,11 +54,12 @@ const Footer: React.FC<FooterProps> = ({ logo }) => {
       </div>
       <div className="max-w-7xl mx-auto px-4 mt-20 pt-10 border-t border-white/5 text-center">
         <p className="text-[10px] text-gray-700 font-black uppercase tracking-[0.4em]">
-          &copy; {new Date().getFullYear()} Barão do Espetinho - Excelência em Churrasco.
+          &copy; {new Date().getFullYear()} Casa de Carnes Tomasini - Excelência em Churrasco.
         </p>
       </div>
     </footer>
   );
 };
 
+// Fix: Adding missing default export for Footer component
 export default Footer;
