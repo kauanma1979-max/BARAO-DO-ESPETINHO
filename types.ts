@@ -60,18 +60,3 @@ export interface Order {
   changeFor?: number;
   mapsUrl?: string;
 }
-
-/**
- * Interface representing a blog post or tip.
- * Used in Catalog and AdminPanel components.
- */
-export interface Article {
-  id: string;
-  title: string;
-  content: string;
-  image: string;
-  date: string;
-  author: string;
-  excerpt: string;
-  tags: string[];
-}
