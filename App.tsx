@@ -9,7 +9,6 @@ import Checkout from './components/Checkout';
 import AdminPanel from './components/AdminPanel';
 import About from './components/About';
 import Footer from './components/Footer';
-import LoginModal from './components/LoginModal';
 import { GoogleGenAI } from "@google/genai";
 
 const App: React.FC = () => {
@@ -27,7 +26,6 @@ const App: React.FC = () => {
     return saved ? JSON.parse(saved) : [];
   });
   const [isAdmin, setIsAdmin] = useState(false);
-  const [showLogin, setShowLogin] = useState(false);
   const [lastOrder, setLastOrder] = useState<Order | null>(null);
   const [isGeneratingMap, setIsGeneratingMap] = useState(false);
 
@@ -113,14 +111,9 @@ const App: React.FC = () => {
     setView('success');
   };
 
-  const handleAdminAuth = (password: string) => {
-    if (password === '101210') { 
-      setIsAdmin(true);
-      setShowLogin(false);
-      setView('admin');
-    } else {
-      alert('Senha incorreta!');
-    }
+  const handleEnterAdmin = () => {
+    setIsAdmin(true);
+    setView('admin');
   };
 
   return (
@@ -130,7 +123,7 @@ const App: React.FC = () => {
         onCartClick={() => setView('cart')}
         onLogoClick={() => setView('catalog')}
         onAboutClick={() => setView('about')}
-        onAdminClick={() => isAdmin ? setView('admin') : setShowLogin(true)}
+        onAdminClick={handleEnterAdmin}
         isAdmin={isAdmin}
         logo={logo}
       />
@@ -211,8 +204,6 @@ const App: React.FC = () => {
       </main>
 
       <Footer logo={logo} />
-
-      {showLogin && <LoginModal onLogin={handleAdminAuth} onClose={() => setShowLogin(false)} />}
       
       {isGeneratingMap && (
         <div className="fixed inset-0 z-[100] bg-white/80 backdrop-blur-sm flex items-center justify-center">
