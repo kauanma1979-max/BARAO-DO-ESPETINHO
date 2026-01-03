@@ -3,11 +3,10 @@ export enum Category {
   TRADITIONAL = 'tradicional',
   SPECIAL = 'especial',
   DRINK = 'bebida',
-  SIDE = 'acompanhamento',
-  COAL = 'carvao',
-  TIPS = 'dicas'
+  SIDE = 'acompanhamento'
 }
 
+// Fix: Adding PENDING and AWAITING_PAYMENT to OrderStatus enum as they are referenced in Checkout.tsx
 export enum OrderStatus {
   PENDING = 'pendente',
   AWAITING_PAYMENT = 'aguardando_pagamento',
@@ -32,17 +31,6 @@ export interface Product {
   stock: number;
   image: string;
   weight?: string;
-}
-
-export interface Article {
-  id: string;
-  title: string;
-  content: string;
-  excerpt: string;
-  image: string;
-  date: string;
-  author: string;
-  tags: string[];
 }
 
 export interface CartItem extends Product {
