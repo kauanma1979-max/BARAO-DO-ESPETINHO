@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Product, Order, CartItem, OrderStatus, Article } from './types';
+import { Product, Order, CartItem, OrderStatus, Article, Category } from './types';
 import { INITIAL_PRODUCTS } from './constants';
 import Header from './components/Header';
 import Catalog from './components/Catalog';
@@ -15,6 +15,7 @@ const DEFAULT_LOGO = 'https://raw.githubusercontent.com/ai-code-gen/assets/main/
 
 const App: React.FC = () => {
   const [view, setView] = useState<'catalog' | 'cart' | 'checkout' | 'admin' | 'success' | 'about'>('catalog');
+  const [activeCategory, setActiveCategory] = useState<Category | 'all'>(Category.TRADITIONAL);
   const [products, setProducts] = useState<Product[]>(() => {
     const saved = localStorage.getItem('products');
     return saved ? JSON.parse(saved) : INITIAL_PRODUCTS;
@@ -138,12 +139,23 @@ const App: React.FC = () => {
     setView('admin');
   };
 
+  const navigateToTips = () => {
+    setView('catalog');
+    setActiveCategory(Category.TIPS);
+  };
+
+  const navigateToHome = () => {
+    setView('catalog');
+    setActiveCategory(Category.TRADITIONAL);
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
       <Header 
         cartCount={cartTotalItems} 
         onCartClick={() => setView('cart')}
-        onLogoClick={() => setView('catalog')}
+        onLogoClick={navigateToHome}
+        onTipsClick={navigateToTips}
         onAboutClick={() => setView('about')}
         onAdminClick={handleEnterAdmin}
         isAdmin={isAdmin}
@@ -156,6 +168,8 @@ const App: React.FC = () => {
             <Catalog 
               products={products} 
               articles={articles}
+              activeCategory={activeCategory}
+              setActiveCategory={setActiveCategory}
               addToCart={addToCart} 
               cart={cart} 
               updateCartQuantity={updateCartQuantity} 

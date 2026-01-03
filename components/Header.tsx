@@ -5,13 +5,14 @@ interface HeaderProps {
   cartCount: number;
   onCartClick: () => void;
   onLogoClick: () => void;
+  onTipsClick: () => void;
   onAboutClick: () => void;
   onAdminClick: () => void;
   isAdmin: boolean;
   logo?: string;
 }
 
-const Header: React.FC<HeaderProps> = ({ cartCount, onCartClick, onLogoClick, onAboutClick, onAdminClick, isAdmin, logo }) => {
+const Header: React.FC<HeaderProps> = ({ cartCount, onCartClick, onLogoClick, onTipsClick, onAboutClick, onAdminClick, isAdmin, logo }) => {
   return (
     <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm">
       <div className="h-1.5 header-animated w-full"></div>
@@ -33,8 +34,8 @@ const Header: React.FC<HeaderProps> = ({ cartCount, onCartClick, onLogoClick, on
 
         <div className="hidden md:flex items-center gap-8">
           <nav className="flex items-center gap-10">
-            <button onClick={onLogoClick} className="font-black text-onyx hover:text-ferrari interactive-element uppercase text-lg lg:text-xl tracking-tighter flex items-center gap-2 text-shadow-gray">
-              <i className="fas fa-utensils text-sm text-ferrari"></i> Dicas do Barão
+            <button onClick={onTipsClick} className="font-black text-onyx hover:text-ferrari interactive-element uppercase text-lg lg:text-xl tracking-tighter flex items-center gap-2 text-shadow-gray">
+              <i className="fas fa-lightbulb text-sm text-ferrari"></i> Dicas do Barão
             </button>
             <button onClick={onAboutClick} className="font-black text-onyx hover:text-ferrari interactive-element uppercase text-lg lg:text-xl tracking-tighter flex items-center gap-2 text-shadow-gray">
               <i className="fas fa-star text-sm text-ferrari"></i> Sobre

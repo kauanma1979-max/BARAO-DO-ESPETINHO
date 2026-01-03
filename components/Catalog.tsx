@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Product, Category, CartItem, Article } from '../types';
 import { CATEGORY_LABELS } from '../constants';
 
@@ -7,13 +7,13 @@ interface CatalogProps {
   products: Product[];
   articles: Article[];
   cart: CartItem[];
+  activeCategory: Category | 'all';
+  setActiveCategory: (cat: Category | 'all') => void;
   addToCart: (p: Product) => void;
   updateCartQuantity: (id: string, delta: number) => void;
 }
 
-const Catalog: React.FC<CatalogProps> = ({ products, articles, cart, addToCart, updateCartQuantity }) => {
-  const [activeCategory, setActiveCategory] = useState<Category | 'all'>(Category.TRADITIONAL);
-
+const Catalog: React.FC<CatalogProps> = ({ products, articles, cart, activeCategory, setActiveCategory, addToCart, updateCartQuantity }) => {
   const filteredProducts = activeCategory === 'all' 
     ? products 
     : products.filter(p => p.category === activeCategory);
@@ -61,7 +61,6 @@ const Catalog: React.FC<CatalogProps> = ({ products, articles, cart, addToCart, 
         ))}
       </div>
 
-      {/* Visualização de Dicas (Correlação com Configurações) */}
       {activeCategory === Category.TIPS ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-fade-in-up">
           {articles.length > 0 ? (
@@ -83,9 +82,8 @@ const Catalog: React.FC<CatalogProps> = ({ products, articles, cart, addToCart, 
           )}
         </div>
       ) : (
-        /* Grid de Produtos Original */
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-6">
-          {filteredProducts.map((product, index) => {
+          {filteredProducts.map((product) => {
             const cartItem = cart.find(i => i.id === product.id);
             const hasStock = product.stock > 0;
             return (
