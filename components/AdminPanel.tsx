@@ -18,6 +18,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const restoreInputRef = useRef<HTMLInputElement>(null);
   const modalFileInputRef = useRef<HTMLInputElement>(null);
 
   const [newProduct, setNewProduct] = useState<Partial<Product>>({
@@ -108,6 +109,51 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
     setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o));
   };
 
+  const handleBackup = () => {
+    const backupData = {
+      products,
+      orders,
+      logo,
+      timestamp: new Date().toISOString()
+    };
+    const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `backup_barao_espetinho_${new Date().toLocaleDateString().replace(/\//g, '-')}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleRestore = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const content = JSON.parse(event.target?.result as string);
+          if (content.products && Array.isArray(content.products)) {
+            setProducts(content.products);
+          }
+          if (content.orders && Array.isArray(content.orders)) {
+            setOrders(content.orders);
+          }
+          if (content.logo !== undefined) {
+            setLogo(content.logo);
+          }
+          alert('Dados restaurados com sucesso!');
+        } catch (err) {
+          alert('Erro ao restaurar backup. Verifique se o arquivo JSON é válido.');
+        }
+      };
+      reader.readAsText(file);
+    }
+    // Reset input value to allow the same file to be selected again if needed
+    e.target.value = '';
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const day = date.getDate().toString().padStart(2, '0');
@@ -137,15 +183,32 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
             <p className="text-gray-400 font-bold uppercase text-xs tracking-[0.5em] mt-3">Painel Administrativo Premium</p>
           </div>
         </div>
-        <button onClick={onLogout} className="px-12 py-6 bg-white text-gray-500 rounded-2xl font-black uppercase text-sm tracking-widest hover:text-ferrari transition-all flex items-center gap-4 shadow-sm border border-gray-100">
-          <i className="fas fa-power-off text-xl"></i> SAIR
-        </button>
+        <div className="flex gap-3">
+          <button 
+            onClick={handleBackup}
+            className="px-8 py-5 bg-white text-onyx rounded-2xl font-black uppercase text-xs tracking-widest hover:text-ferrari transition-all flex items-center gap-3 shadow-sm border border-gray-100"
+            title="Exportar Dados"
+          >
+            <i className="fas fa-download"></i> BACKUP
+          </button>
+          <button 
+            onClick={() => restoreInputRef.current?.click()}
+            className="px-8 py-5 bg-white text-onyx rounded-2xl font-black uppercase text-xs tracking-widest hover:text-ferrari transition-all flex items-center gap-3 shadow-sm border border-gray-100"
+            title="Importar Dados"
+          >
+            <i className="fas fa-upload"></i> RESTAURAR
+            <input type="file" ref={restoreInputRef} onChange={handleRestore} accept=".json" className="hidden" />
+          </button>
+          <button onClick={onLogout} className="px-8 py-5 bg-onyx text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-ferrari transition-all flex items-center gap-3 shadow-sm">
+            <i className="fas fa-power-off"></i> SAIR
+          </button>
+        </div>
       </div>
 
       <div className="flex gap-4 overflow-x-auto no-scrollbar mb-12 -mx-4 px-4">
         {[
           { id: 'dashboard', label: 'Resumo Geral', icon: 'fa-chart-line' },
-          { id: 'orders', label: 'Pedido', icon: 'fa-receipt' },
+          { id: 'orders', label: 'Pedidos', icon: 'fa-receipt' },
           { id: 'inventory', label: 'Estoque', icon: 'fa-boxes-stacked' },
           { id: 'store', label: 'Marca', icon: 'fa-palette' },
         ].map(tab => (
