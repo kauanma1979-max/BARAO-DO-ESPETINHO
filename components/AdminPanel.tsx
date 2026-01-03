@@ -14,7 +14,7 @@ interface AdminPanelProps {
 }
 
 const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, setOrders, logo, setLogo, onLogout }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'orders' | 'inventory' | 'store' | 'blog'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'orders' | 'inventory' | 'store'>('dashboard');
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -202,7 +202,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
           { id: 'dashboard', label: 'Resumo Geral', icon: 'fa-chart-line' },
           { id: 'orders', label: 'Pedidos', icon: 'fa-receipt' },
           { id: 'inventory', label: 'Estoque', icon: 'fa-boxes-stacked' },
-          { id: 'blog', label: 'Blog', icon: 'fa-newspaper' },
           { id: 'store', label: 'Marca', icon: 'fa-palette' },
         ].map(tab => (
           <button 
@@ -398,14 +397,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
                 </div>
               </div>
             ))}
-          </div>
-        )}
-
-        {activeTab === 'blog' && (
-          <div className="bg-white rounded-[4rem] p-16 shadow-sm border border-gray-100 animate-fade-in-up max-w-4xl min-h-[400px] flex flex-col items-center justify-center text-center">
-            <i className="fas fa-newspaper text-6xl text-gray-100 mb-8"></i>
-            <h3 className="text-3xl font-black uppercase tracking-tighter text-onyx mb-4">Módulo de Blog</h3>
-            <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">Aba Blog Adicionada. Funcionalidade em desenvolvimento.</p>
           </div>
         )}
 
