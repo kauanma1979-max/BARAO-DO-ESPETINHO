@@ -34,7 +34,7 @@ const Header: React.FC<HeaderProps> = ({ cartCount, onCartClick, onLogoClick, on
         <div className="hidden md:flex items-center gap-8">
           <nav className="flex items-center gap-10">
             <button onClick={onLogoClick} className="font-black text-onyx hover:text-ferrari interactive-element uppercase text-lg lg:text-xl tracking-tighter flex items-center gap-2 text-shadow-gray">
-              <i className="fas fa-utensils text-sm text-ferrari"></i> Cardápio
+              <i className="fas fa-utensils text-sm text-ferrari"></i> Dicas do Barão
             </button>
             <button onClick={onAboutClick} className="font-black text-onyx hover:text-ferrari interactive-element uppercase text-lg lg:text-xl tracking-tighter flex items-center gap-2 text-shadow-gray">
               <i className="fas fa-star text-sm text-ferrari"></i> Sobre
