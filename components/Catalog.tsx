@@ -11,7 +11,8 @@ interface CatalogProps {
 }
 
 const Catalog: React.FC<CatalogProps> = ({ products, cart, addToCart, updateCartQuantity }) => {
-  const [activeCategory, setActiveCategory] = useState<Category | 'all'>('all');
+  // Inicializamos com a primeira categoria disponível já que o filtro "Tudo" foi removido
+  const [activeCategory, setActiveCategory] = useState<Category | 'all'>(Category.TRADITIONAL);
 
   const filteredProducts = activeCategory === 'all' 
     ? products 
@@ -43,12 +44,6 @@ const Catalog: React.FC<CatalogProps> = ({ products, cart, addToCart, updateCart
 
       {/* Category Filter - Expanded with Charcoal and Tips */}
       <div className="flex gap-2 md:gap-4 overflow-x-auto pb-4 no-scrollbar -mx-4 px-4 sticky top-16 md:top-20 z-30 bg-slate-50/95 backdrop-blur-md pt-4 fade-in-up">
-        <button 
-          onClick={() => setActiveCategory('all')}
-          className={`px-6 md:px-10 py-4 md:py-5 rounded-2xl md:rounded-[2rem] font-black uppercase text-xs md:text-base tracking-tighter whitespace-nowrap shadow-md border text-shadow-gray transition-all ${activeCategory === 'all' ? 'bg-onyx text-white border-onyx scale-105' : 'bg-white text-onyx hover:bg-gray-100 border-gray-100'}`}
-        >
-          <i className="fas fa-layer-group mr-2 text-ferrari"></i> Tudo
-        </button>
         {categories.map(cat => (
           <button 
             key={cat}
