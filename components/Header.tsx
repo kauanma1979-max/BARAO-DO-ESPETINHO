@@ -26,7 +26,7 @@ const Header: React.FC<HeaderProps> = ({ cartCount, onCartClick, onLogoClick, on
             </div>
           )}
           <div>
-            <h1 className="text-lg md:text-2xl font-black font-heading text-onyx tracking-tighter uppercase leading-none">Casa de Carnes <span className="text-ferrari">Tomasini</span></h1>
+            <h1 className="text-lg md:text-2xl font-black font-heading text-onyx tracking-tighter uppercase leading-none">Barão do <span className="text-ferrari">Espetinho</span></h1>
             <p className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest leading-none mt-1">ESPETINHOS PREMIUM PARA ASSAR</p>
           </div>
         </div>
@@ -80,5 +80,4 @@ const Header: React.FC<HeaderProps> = ({ cartCount, onCartClick, onLogoClick, on
   );
 };
 
-// Fix: Adding missing default export for Header component
 export default Header;

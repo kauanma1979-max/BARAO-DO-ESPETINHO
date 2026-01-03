@@ -11,8 +11,6 @@ import About from './components/About';
 import Footer from './components/Footer';
 import { GoogleGenAI } from "@google/genai";
 
-const DEFAULT_LOGO = 'https://raw.githubusercontent.com/ai-code-gen/assets/main/barao_logo.png'; // Using the provided image asset
-
 const App: React.FC = () => {
   const [view, setView] = useState<'catalog' | 'cart' | 'checkout' | 'admin' | 'success' | 'about'>('catalog');
   const [products, setProducts] = useState<Product[]>(() => {
@@ -20,7 +18,7 @@ const App: React.FC = () => {
     return saved ? JSON.parse(saved) : INITIAL_PRODUCTS;
   });
   const [logo, setLogo] = useState<string>(() => {
-    return localStorage.getItem('storeLogo') || DEFAULT_LOGO;
+    return localStorage.getItem('storeLogo') || '';
   });
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>(() => {
