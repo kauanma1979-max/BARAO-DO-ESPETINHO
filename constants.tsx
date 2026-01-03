@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Product, Category } from './types';
+import { Product, Category, Article } from './types';
 
 export const FERRARI_RED = '#FF2800';
 export const ONYX_BLACK = '#1A1A1A';
@@ -37,46 +37,6 @@ export const INITIAL_PRODUCTS: Product[] = [
     image: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=400&h=300&q=80" 
   },
   { 
-    id: '4', 
-    name: "ESP. LING. FRANGO", 
-    category: Category.TRADITIONAL, 
-    cost: 37.87, 
-    price: 46.90, 
-    description: "Linguiça de frango leve e bem temperada.", 
-    stock: 20, 
-    image: "https://images.unsplash.com/photo-1615937657715-bc7b4b7962c1?auto=format&fit=crop&w=400&h=300&q=80" 
-  },
-  { 
-    id: '5', 
-    name: "ESP. KAFTA", 
-    category: Category.TRADITIONAL, 
-    cost: 37.87, 
-    price: 46.90, 
-    description: "Carne moída temperada com especiarias árabes.", 
-    stock: 20, 
-    image: "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?auto=format&fit=crop&w=400&h=300&q=80" 
-  },
-  { 
-    id: '6', 
-    name: "ESP. KAFTA C/QUEIJO", 
-    category: Category.TRADITIONAL, 
-    cost: 39.98, 
-    price: 49.90, 
-    description: "Kafta bovina recheada com queijo derretido.", 
-    stock: 20, 
-    image: "https://images.unsplash.com/photo-1594968973184-9140fa307f7f?auto=format&fit=crop&w=400&h=300&q=80" 
-  },
-  { 
-    id: '7', 
-    name: "ESP. PERNIL SUINO", 
-    category: Category.TRADITIONAL, 
-    cost: 32.60, 
-    price: 40.90, 
-    description: "Pernil suíno marinado em ervas finas.", 
-    stock: 20, 
-    image: "https://images.unsplash.com/photo-1516684732162-798a0062be99?auto=format&fit=crop&w=400&h=300&q=80" 
-  },
-  { 
     id: '8', 
     name: "ESP. CORAÇÃO", 
     category: Category.SPECIAL, 
@@ -85,16 +45,6 @@ export const INITIAL_PRODUCTS: Product[] = [
     description: "Coração de frango temperado no ponto perfeito.", 
     stock: 20, 
     image: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=400&h=300&q=80" 
-  },
-  { 
-    id: '9', 
-    name: "ESP. BANANINHA", 
-    category: Category.SPECIAL, 
-    cost: 48.42, 
-    price: 59.90, 
-    description: "Corte entre-costela bovina, extremamente suculento.", 
-    stock: 20, 
-    image: "https://images.unsplash.com/photo-1558030006-450675393462?auto=format&fit=crop&w=400&h=300&q=80" 
   },
   { 
     id: '17', 
@@ -112,29 +62,22 @@ export const INITIAL_PRODUCTS: Product[] = [
     category: Category.COAL, 
     cost: 18.00, 
     price: 29.90, 
-    description: "Carvão premium de acácia negra. Mais calor e durabilidade.", 
+    description: "Carvão premium de acácia negra.", 
     stock: 30, 
     image: "https://images.unsplash.com/photo-1533630713315-99df856be306?auto=format&fit=crop&w=400&h=300&q=80" 
-  },
-  { 
-    id: '19', 
-    name: "DICAS DO BARÃO", 
-    category: Category.TIPS, 
-    cost: 0, 
-    price: 0, 
-    description: "Segredos do mestre: ponto da carne e brasa perfeita.", 
-    stock: 999, 
-    image: "https://images.unsplash.com/photo-1529193591184-b1d58fab356c?auto=format&fit=crop&w=400&h=300&q=80" 
-  },
-  { 
-    id: '10', 
-    name: "ESP. FRALDINHA", 
-    category: Category.SPECIAL, 
-    cost: 49.48, 
-    price: 60.90, 
-    description: "Fraldinha premium com gordura equilibrada.", 
-    stock: 20, 
-    image: "https://images.unsplash.com/photo-1546241072-48010ad28c2c?auto=format&fit=crop&w=400&h=300&q=80" 
+  }
+];
+
+export const INITIAL_ARTICLES: Article[] = [
+  {
+    id: 'art-1',
+    title: "Como preparar o churrasco perfeito: Guia do Barão",
+    excerpt: "Descubra os segredos para assar espetinhos suculentos com técnicas profissionais.",
+    content: "Assar o churrasco perfeito exige paciência e técnica. Comece pelo braseiro branco. Mantenha os espetos a 15cm da brasa e não vire a carne o tempo todo.",
+    image: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=800&q=80",
+    date: new Date().toISOString(),
+    author: "Mestre Barão",
+    tags: ["Dicas", "Técnica"]
   }
 ];
 
