@@ -18,7 +18,8 @@ const Catalog: React.FC<CatalogProps> = ({ products, cart, addToCart, updateCart
     ? products 
     : products.filter(p => p.category === activeCategory);
 
-  const categories = Object.keys(CATEGORY_LABELS) as Category[];
+  // Filtra as categorias para não exibir o botão "Dicas do Barão"
+  const categories = (Object.keys(CATEGORY_LABELS) as Category[]).filter(cat => cat !== Category.TIPS);
 
   return (
     <div className="space-y-6 md:space-y-10 py-6 overflow-hidden">
@@ -42,7 +43,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, cart, addToCart, updateCart
         </div>
       </section>
 
-      {/* Category Filter - Expanded with Charcoal and Tips */}
+      {/* Category Filter - Expanded with Charcoal but removed Tips as requested */}
       <div className="flex gap-2 md:gap-4 overflow-x-auto pb-4 no-scrollbar -mx-4 px-4 sticky top-16 md:top-20 z-30 bg-slate-50/95 backdrop-blur-md pt-4 fade-in-up">
         {categories.map(cat => (
           <button 
@@ -55,7 +56,6 @@ const Catalog: React.FC<CatalogProps> = ({ products, cart, addToCart, updateCart
             {cat === Category.DRINK && <i className="fas fa-wine-glass mr-2 text-ferrari"></i>}
             {cat === Category.SIDE && <i className="fas fa-bowl-rice mr-2 text-ferrari"></i>}
             {cat === Category.COAL && <i className="fas fa-fire mr-2 text-ferrari"></i>}
-            {cat === Category.TIPS && <i className="fas fa-lightbulb mr-2 text-ferrari"></i>}
             {CATEGORY_LABELS[cat]}
           </button>
         ))}
