@@ -242,6 +242,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
                     <th className="p-12 text-sm font-black uppercase tracking-widest text-gray-400 border-b">IDENTIFICAÇÃO</th>
                     <th className="p-12 text-sm font-black uppercase tracking-widest text-gray-400 border-b">CLIENTE</th>
                     <th className="p-12 text-sm font-black uppercase tracking-widest text-gray-400 border-b">ITENS</th>
+                    <th className="p-12 text-sm font-black uppercase tracking-widest text-gray-400 border-b text-center">ENTREGA</th>
                     <th className="p-12 text-sm font-black uppercase tracking-widest text-gray-400 border-b text-center">STATUS</th>
                   </tr>
                 </thead>
@@ -263,11 +264,25 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
                           {order.items.map(i => <div key={i.id}>{i.quantity}x {i.name}</div>)}
                         </div>
                       </td>
-                      <td className="p-12 border-b">
+                      <td className="p-12 border-b text-center">
+                        {order.mapsUrl ? (
+                          <a 
+                            href={order.mapsUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 px-6 py-3 bg-slate-100 rounded-2xl font-black text-[10px] uppercase text-onyx hover:bg-ferrari hover:text-white transition-all shadow-sm border border-gray-100"
+                          >
+                            <i className="fas fa-location-dot"></i> VER NO MAPA
+                          </a>
+                        ) : (
+                          <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Retirada</span>
+                        )}
+                      </td>
+                      <td className="p-12 border-b text-center">
                         <select 
                           value={order.status}
                           onChange={(e) => updateOrderStatus(order.id, e.target.value as OrderStatus)}
-                          className="px-6 py-3 rounded-2xl font-black uppercase text-xs border-2 bg-slate-50 outline-none"
+                          className="px-6 py-3 rounded-2xl font-black uppercase text-xs border-2 bg-slate-50 outline-none shadow-sm"
                         >
                           <option value={OrderStatus.PENDING}>AGUARDANDO</option>
                           <option value={OrderStatus.PREPARING}>PREPARANDO</option>
