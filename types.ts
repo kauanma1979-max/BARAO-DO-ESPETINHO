@@ -8,6 +8,7 @@ export enum Category {
   TIPS = 'dicas'
 }
 
+// Fix: Adding PENDING and AWAITING_PAYMENT to OrderStatus enum as they are referenced in Checkout.tsx
 export enum OrderStatus {
   PENDING = 'pendente',
   AWAITING_PAYMENT = 'aguardando_pagamento',
@@ -58,12 +59,4 @@ export interface Order {
   payerName?: string;
   changeFor?: number;
   mapsUrl?: string;
-}
-
-export interface Article {
-  id: string;
-  title: string;
-  content: string;
-  image: string;
-  date: string;
 }
