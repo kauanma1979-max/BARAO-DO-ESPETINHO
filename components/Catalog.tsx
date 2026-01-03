@@ -13,11 +13,10 @@ interface CatalogProps {
 }
 
 const Catalog: React.FC<CatalogProps> = ({ products, articles, cart, addToCart, updateCartQuantity, onArticleClick }) => {
-  const [activeCategory, setActiveCategory] = useState<Category | 'all'>('all');
+  // Inicia diretamente em Tradicionais para um visual mais limpo
+  const [activeCategory, setActiveCategory] = useState<Category>(Category.TRADITIONAL);
 
-  const filteredProducts = activeCategory === 'all' 
-    ? products 
-    : products.filter(p => p.category === activeCategory);
+  const filteredProducts = products.filter(p => p.category === activeCategory);
 
   const categories = Object.keys(CATEGORY_LABELS) as Category[];
 
@@ -43,14 +42,8 @@ const Catalog: React.FC<CatalogProps> = ({ products, articles, cart, addToCart, 
         </div>
       </section>
 
-      {/* Category Filter */}
+      {/* Category Filter - "Tudo" removido conforme solicitado */}
       <div className="flex gap-2 md:gap-4 overflow-x-auto pb-4 no-scrollbar -mx-4 px-4 sticky top-16 md:top-20 z-30 bg-slate-50/95 backdrop-blur-md pt-4 fade-in-up">
-        <button 
-          onClick={() => setActiveCategory('all')}
-          className={`px-6 md:px-10 py-4 md:py-5 rounded-2xl md:rounded-[2rem] font-black uppercase text-xs md:text-base tracking-tighter whitespace-nowrap shadow-md border text-shadow-gray transition-all ${activeCategory === 'all' ? 'bg-onyx text-white border-onyx scale-105' : 'bg-white text-onyx hover:bg-gray-100 border-gray-100'}`}
-        >
-          <i className="fas fa-layer-group mr-2 text-ferrari"></i> Tudo
-        </button>
         {categories.map(cat => (
           <button 
             key={cat}
@@ -80,7 +73,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, articles, cart, addToCart, 
               <div className="relative aspect-video overflow-hidden">
                 <img src={article.image} alt={article.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                 <div className="absolute top-4 left-4">
-                  <span className="bg-ferrari text-white px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest">ARTIGO PREMIUM</span>
+                  <span className="bg-ferrari text-white px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest">DICA DO MESTRE</span>
                 </div>
               </div>
               <div className="p-8 space-y-4">
