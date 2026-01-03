@@ -11,6 +11,8 @@ import About from './components/About';
 import Footer from './components/Footer';
 import { GoogleGenAI } from "@google/genai";
 
+const DEFAULT_LOGO = 'https://raw.githubusercontent.com/ai-code-gen/assets/main/barao_logo.png';
+
 const App: React.FC = () => {
   const [view, setView] = useState<'catalog' | 'cart' | 'checkout' | 'admin' | 'success' | 'about'>('catalog');
   const [products, setProducts] = useState<Product[]>(() => {
@@ -18,7 +20,7 @@ const App: React.FC = () => {
     return saved ? JSON.parse(saved) : INITIAL_PRODUCTS;
   });
   const [logo, setLogo] = useState<string>(() => {
-    return localStorage.getItem('storeLogo') || '';
+    return localStorage.getItem('storeLogo') || DEFAULT_LOGO;
   });
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>(() => {
@@ -29,16 +31,29 @@ const App: React.FC = () => {
   const [lastOrder, setLastOrder] = useState<Order | null>(null);
   const [isGeneratingMap, setIsGeneratingMap] = useState(false);
 
+  // Persistência com tratamento de erros para evitar tela branca (QuotaExceededError)
   useEffect(() => {
-    localStorage.setItem('products', JSON.stringify(products));
+    try {
+      localStorage.setItem('products', JSON.stringify(products));
+    } catch (e) {
+      console.warn('LocalStorage limit reached for products');
+    }
   }, [products]);
 
   useEffect(() => {
-    localStorage.setItem('orders', JSON.stringify(orders));
+    try {
+      localStorage.setItem('orders', JSON.stringify(orders));
+    } catch (e) {
+      console.warn('LocalStorage limit reached for orders');
+    }
   }, [orders]);
 
   useEffect(() => {
-    localStorage.setItem('storeLogo', logo);
+    try {
+      localStorage.setItem('storeLogo', logo);
+    } catch (e) {
+      console.error('Falha ao salvar logo: Imagem muito grande para o LocalStorage.');
+    }
   }, [logo]);
 
   const cartTotalItems = useMemo(() => cart.reduce((acc, item) => acc + item.quantity, 0), [cart]);

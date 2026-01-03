@@ -36,21 +36,6 @@ const Footer: React.FC<FooterProps> = ({ logo }) => {
             </li>
           </ul>
         </div>
-
-        <div>
-          <h4 className="text-ferrari font-black uppercase tracking-[0.3em] text-[10px] mb-8">Conecte-se</h4>
-          <div className="flex gap-4">
-            <a href="#" className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center hover:bg-ferrari transition-all group shadow-lg">
-              <i className="fab fa-instagram text-xl"></i>
-            </a>
-            <a href="#" className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center hover:bg-ferrari transition-all group shadow-lg">
-              <i className="fab fa-whatsapp text-xl"></i>
-            </a>
-            <a href="#" className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center hover:bg-ferrari transition-all group shadow-lg">
-              <i className="fas fa-location-dot text-lg"></i>
-            </a>
-          </div>
-        </div>
       </div>
       <div className="max-w-7xl mx-auto px-4 mt-20 pt-10 border-t border-white/5 text-center">
         <p className="text-[10px] text-gray-700 font-black uppercase tracking-[0.4em]">

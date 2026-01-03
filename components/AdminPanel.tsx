@@ -96,13 +96,29 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
     setNewProduct({ category: Category.TRADITIONAL, name: '', stock: 0, cost: 0, price: 0, weight: '', image: 'https://picsum.photos/seed/espeto/400/300' });
   };
 
+  // Correção do erro crítico: Proteção contra QuotaExceededError
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Limite de 1MB para evitar estouro do LocalStorage
+      if (file.size > 1024 * 1024) {
+        alert('Erro Crítico: A imagem é muito grande para o armazenamento do navegador (Máximo 1MB). Reduza a imagem e tente novamente.');
+        e.target.value = '';
+        return;
+      }
+
       const reader = new FileReader();
-      reader.onloadend = () => setLogo(reader.result as string);
+      reader.onloadend = () => {
+        try {
+          const result = reader.result as string;
+          setLogo(result);
+        } catch (err) {
+          alert('Erro ao processar imagem.');
+        }
+      };
       reader.readAsDataURL(file);
     }
+    e.target.value = '';
   };
 
   const updateOrderStatus = (orderId: string, status: OrderStatus) => {
@@ -134,39 +150,27 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
       reader.onload = (event) => {
         try {
           const content = JSON.parse(event.target?.result as string);
-          if (content.products && Array.isArray(content.products)) {
-            setProducts(content.products);
-          }
-          if (content.orders && Array.isArray(content.orders)) {
-            setOrders(content.orders);
-          }
-          if (content.logo !== undefined) {
-            setLogo(content.logo);
-          }
+          if (content.products) setProducts(content.products);
+          if (content.orders) setOrders(content.orders);
+          if (content.logo) setLogo(content.logo);
           alert('Dados restaurados com sucesso!');
         } catch (err) {
-          alert('Erro ao restaurar backup. Verifique se o arquivo JSON é válido.');
+          alert('Erro ao restaurar backup.');
         }
       };
       reader.readAsText(file);
     }
-    // Reset input value to allow the same file to be selected again if needed
     e.target.value = '';
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear().toString().slice(-2);
-    return `${day}/${month}/${year}`;
+    return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear().toString().slice(-2)}`;
   };
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    return `${hours}:${minutes}`;
+    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
   };
 
   const textClass = "text-black text-shadow-gray font-black uppercase tracking-tighter";
@@ -187,14 +191,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
           <button 
             onClick={handleBackup}
             className="px-8 py-5 bg-white text-onyx rounded-2xl font-black uppercase text-xs tracking-widest hover:text-ferrari transition-all flex items-center gap-3 shadow-sm border border-gray-100"
-            title="Exportar Dados"
           >
             <i className="fas fa-download"></i> BACKUP
           </button>
           <button 
             onClick={() => restoreInputRef.current?.click()}
             className="px-8 py-5 bg-white text-onyx rounded-2xl font-black uppercase text-xs tracking-widest hover:text-ferrari transition-all flex items-center gap-3 shadow-sm border border-gray-100"
-            title="Importar Dados"
           >
             <i className="fas fa-upload"></i> RESTAURAR
             <input type="file" ref={restoreInputRef} onChange={handleRestore} accept=".json" className="hidden" />
@@ -241,57 +243,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
                    <span className={`text-3xl font-black text-onyx tracking-tighter block`}>{stat.val}</span>
                  </div>
                ))}
-            </div>
-
-            <div className="bg-white p-12 rounded-[4rem] shadow-sm border border-gray-100">
-               <div className="flex items-center justify-between mb-16">
-                 <div>
-                   <h3 className="text-4xl font-black uppercase tracking-tighter text-onyx">Ranking de Vendas</h3>
-                   <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mt-2">Desempenho por item e categoria</p>
-                 </div>
-                 <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center text-ferrari shadow-inner">
-                   <i className="fas fa-ranking-star text-4xl"></i>
-                 </div>
-               </div>
-               
-               <div className="space-y-16">
-                 {Object.entries(salesByCategory).map(([category, items]) => (items as any[]).length > 0 && (
-                   <div key={category} className="space-y-8">
-                      <div className="flex items-center gap-6">
-                        <div className="h-10 w-3 bg-ferrari rounded-full"></div>
-                        <h4 className="text-2xl font-black text-onyx uppercase tracking-tighter">{CATEGORY_LABELS[category as Category]}</h4>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 gap-6">
-                        {(items as any[]).map((item) => (
-                          <div key={item.id} className="group flex items-center gap-8 bg-slate-50/50 p-6 rounded-[2rem] hover:bg-white hover:shadow-xl transition-all border border-transparent hover:border-gray-100">
-                            <div className="w-20 h-20 shrink-0 relative">
-                              <img src={item.image} className="w-full h-full object-cover rounded-2xl shadow-lg group-hover:rotate-3 transition-transform" />
-                              {item.salesQty === stats.maxSales && (
-                                <div className="absolute -top-3 -right-3 w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center text-white shadow-lg animate-bounce">
-                                  <i className="fas fa-crown text-[10px]"></i>
-                                </div>
-                              )}
-                            </div>
-                            
-                            <div className="flex-grow space-y-3">
-                              <div className="flex justify-between items-end">
-                                <span className="text-xl font-black text-onyx uppercase tracking-tighter leading-none">{item.name}</span>
-                                <span className="text-sm font-black text-ferrari uppercase tracking-widest">{item.salesQty} VENDIDOS</span>
-                              </div>
-                              <div className="relative h-4 w-full bg-gray-200 rounded-full overflow-hidden">
-                                <div 
-                                  className="absolute top-0 left-0 h-full bg-onyx transition-all duration-1000 ease-out group-hover:bg-ferrari" 
-                                  style={{ width: `${(item.salesQty / stats.maxSales) * 100}%` }}
-                                ></div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                   </div>
-                 ))}
-               </div>
             </div>
           </div>
         )}
@@ -349,83 +300,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
           </div>
         )}
 
-        {activeTab === 'orders' && (
-          <div className="bg-white rounded-[4rem] shadow-sm border border-gray-100 overflow-hidden animate-fade-in-up">
-            <div className="overflow-x-auto no-scrollbar">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50">
-                    <th className="p-12 text-sm font-black uppercase tracking-widest text-gray-400 border-b border-gray-100">IDENTIFICAÇÃO</th>
-                    <th className="p-12 text-sm font-black uppercase tracking-widest text-gray-400 border-b border-gray-100">CLIENTE</th>
-                    <th className="p-12 text-sm font-black uppercase tracking-widest text-gray-400 border-b border-gray-100">ITENS</th>
-                    <th className="p-12 text-sm font-black uppercase tracking-widest text-gray-400 border-b border-gray-100 text-center">STATUS</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {orders.slice().reverse().map(order => (
-                    <tr key={order.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="p-12 border-b border-gray-100">
-                        <div className="flex flex-col">
-                          <span className="font-black text-ferrari tracking-tight text-3xl">#{order.id}</span>
-                          <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
-                            {formatDate(order.date)} - {formatTime(order.date)}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="p-12 border-b border-gray-100">
-                        <p className="font-black text-onyx text-xl mb-3 uppercase tracking-tighter">{order.customer.name}</p>
-                        <div className="flex flex-col gap-3">
-                          <a href={`https://wa.me/55${order.customer.phone.replace(/\D/g,'')}`} target="_blank" rel="noopener noreferrer" className="text-xs text-green-600 font-black uppercase tracking-widest flex items-center gap-3 hover:scale-105 transition-transform origin-left">
-                             <i className="fab fa-whatsapp text-2xl"></i> {order.customer.phone}
-                          </a>
-                          {order.mapsUrl && (
-                            <a 
-                              href={order.mapsUrl} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="w-fit bg-onyx text-white px-5 py-2.5 rounded-xl text-[10px] font-black uppercase flex items-center gap-2 hover:bg-ferrari transition-all shadow-lg mt-2"
-                            >
-                              <i className="fas fa-location-dot"></i> VER NO MAPA
-                            </a>
-                          )}
-                        </div>
-                      </td>
-                      <td className="p-12 border-b border-gray-100">
-                        <div className="text-sm font-bold text-gray-600 space-y-2">
-                          {order.items.map(i => (
-                            <div key={i.id} className="flex gap-4">
-                              <span className="text-ferrari font-black">{i.quantity}x</span>
-                              <span className="uppercase tracking-tight">{i.name}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="p-12 border-b border-gray-100">
-                        <div className="flex justify-center">
-                          <select 
-                            value={order.status}
-                            onChange={(e) => updateOrderStatus(order.id, e.target.value as OrderStatus)}
-                            className={`px-10 py-5 rounded-[2rem] font-black uppercase text-xs tracking-[0.2em] outline-none border-2 transition-all cursor-pointer shadow-sm ${
-                              order.status === OrderStatus.CANCELLED ? 'bg-red-50 border-red-100 text-red-500' : 
-                              order.status === OrderStatus.SHIPPED ? 'bg-green-50 border-green-100 text-green-500' :
-                              'bg-ferrari/5 border-ferrari/10 text-ferrari'
-                            }`}
-                          >
-                            <option value={OrderStatus.PENDING}>AGUARDANDO</option>
-                            <option value={OrderStatus.PREPARING}>PREPARANDO</option>
-                            <option value={OrderStatus.SHIPPED}>CONCLUÍDO</option>
-                            <option value={OrderStatus.CANCELLED}>CANCELADO</option>
-                          </select>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
         {activeTab === 'store' && (
           <div className="bg-white rounded-[4rem] p-16 shadow-sm border border-gray-100 animate-fade-in-up max-w-4xl">
             <h3 className="text-4xl font-black uppercase tracking-tighter text-onyx mb-12 flex items-center gap-8">
@@ -448,100 +322,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
           </div>
         )}
       </div>
-
-      {isProductModalOpen && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fade-in">
-          <div className="bg-white w-full max-w-5xl rounded-[5rem] shadow-2xl overflow-hidden animate-fade-in-up border border-white/20">
-            <div className="h-4 header-animated"></div>
-            <form onSubmit={handleSaveProduct} className="p-16 space-y-12">
-              <div className="flex justify-between items-center">
-                <h3 className={`text-4xl ${textClass}`}>{editingProductId ? 'Editar Item' : 'Novo Item'}</h3>
-                <button type="button" onClick={closeModal} className="text-gray-300 hover:text-ferrari transition-all hover:rotate-90"><i className="fas fa-times text-4xl"></i></button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                <div className="space-y-4">
-                  <label className={`text-sm pl-6 ${textClass}`}>Categoria</label>
-                  <select 
-                    value={newProduct.category} 
-                    onChange={e => setNewProduct({...newProduct, category: e.target.value as Category})}
-                    className="w-full bg-slate-50 border-none rounded-[2rem] p-7 font-black uppercase text-base outline-none shadow-inner h-20"
-                  >
-                    {Object.entries(CATEGORY_LABELS).map(([val, label]) => (
-                      <option key={val} value={val}>{label}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-4">
-                  <label className={`text-sm pl-6 ${textClass}`}>Nome do Item</label>
-                  <input 
-                    type="text" required value={newProduct.name}
-                    onChange={e => setNewProduct({...newProduct, name: e.target.value})}
-                    placeholder="EX: PICANHA PREMIUM"
-                    className="w-full bg-slate-50 border-none rounded-[2rem] p-7 font-black uppercase text-base outline-none shadow-inner h-20"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-                <div className="space-y-4">
-                  <label className={`text-sm pl-6 ${textClass}`}>Preço Venda</label>
-                  <input 
-                    type="number" step="0.01" required value={newProduct.price}
-                    onChange={e => setNewProduct({...newProduct, price: parseFloat(e.target.value)})}
-                    className="w-full bg-slate-50 border-none rounded-[2rem] p-7 font-black text-base outline-none shadow-inner h-20"
-                  />
-                </div>
-                <div className="space-y-4">
-                  <label className={`text-sm pl-6 ${textClass}`}>Custo Unit.</label>
-                  <input 
-                    type="number" step="0.01" required value={newProduct.cost}
-                    onChange={e => setNewProduct({...newProduct, cost: parseFloat(e.target.value)})}
-                    className="w-full bg-slate-50 border-none rounded-[2rem] p-7 font-black text-base outline-none shadow-inner h-20"
-                  />
-                </div>
-                <div className="space-y-4">
-                  <label className={`text-sm pl-6 ${textClass}`}>Estoque</label>
-                  <input 
-                    type="number" required value={newProduct.stock}
-                    onChange={e => setNewProduct({...newProduct, stock: parseInt(e.target.value)})}
-                    className="w-full bg-slate-50 border-none rounded-[2rem] p-7 font-black text-base outline-none shadow-inner h-20"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-8">
-                <label className={`text-sm pl-6 ${textClass}`}>Imagem do Produto</label>
-                <div className="flex items-center gap-10">
-                  <img src={newProduct.image} className="w-40 h-40 rounded-[2.5rem] object-cover shadow-2xl border-4 border-white" />
-                  <input type="file" ref={modalFileInputRef} onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onloadend = () => setNewProduct(prev => ({ ...prev, image: reader.result as string }));
-                      reader.readAsDataURL(file);
-                    }
-                  }} className="hidden" />
-                  <button 
-                    type="button" 
-                    onClick={() => modalFileInputRef.current?.click()}
-                    className="px-10 py-5 bg-slate-100 text-gray-500 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-slate-200 transition-all"
-                  >
-                    MUDAR FOTO
-                  </button>
-                </div>
-              </div>
-
-              <button 
-                type="submit"
-                className="w-full bg-onyx text-white py-10 rounded-[3rem] font-black uppercase tracking-[0.3em] text-base hover:bg-ferrari transition-all shadow-2xl shadow-onyx/30"
-              >
-                {editingProductId ? 'SALVAR ALTERAÇÕES' : 'PUBLICAR NO CARDÁPIO'}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
