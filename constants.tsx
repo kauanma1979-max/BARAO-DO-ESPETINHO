@@ -109,20 +109,20 @@ export const INITIAL_PRODUCTS: Product[] = [
   { 
     id: '18', 
     name: "CARVÃO DO BARÃO", 
-    category: Category.SIDE, 
+    category: Category.COAL, 
     cost: 18.00, 
     price: 29.90, 
-    description: "Carvão premium de acácia negra. Mais calor e durabilidade para seu churrasco.", 
+    description: "Carvão premium de acácia negra. Mais calor e durabilidade.", 
     stock: 30, 
     image: "https://images.unsplash.com/photo-1533630713315-99df856be306?auto=format&fit=crop&w=400&h=300&q=80" 
   },
   { 
     id: '19', 
     name: "DICAS DO BARÃO", 
-    category: Category.SPECIAL, 
+    category: Category.TIPS, 
     cost: 0, 
     price: 0, 
-    description: "Aprenda os segredos do mestre: ponto da carne, preparo da brasa e muito mais.", 
+    description: "Segredos do mestre: ponto da carne e brasa perfeita.", 
     stock: 999, 
     image: "https://images.unsplash.com/photo-1529193591184-b1d58fab356c?auto=format&fit=crop&w=400&h=300&q=80" 
   },
@@ -142,5 +142,7 @@ export const CATEGORY_LABELS = {
   [Category.TRADITIONAL]: 'Tradicionais',
   [Category.SPECIAL]: 'Especiais',
   [Category.DRINK]: 'Bebidas',
-  [Category.SIDE]: 'Farofa do Barão'
+  [Category.SIDE]: 'Farofa do Barão',
+  [Category.COAL]: 'Carvão do Barão',
+  [Category.TIPS]: 'Dicas do Barão'
 };
