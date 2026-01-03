@@ -97,6 +97,36 @@ export const INITIAL_PRODUCTS: Product[] = [
     image: "https://images.unsplash.com/photo-1558030006-450675393462?auto=format&fit=crop&w=400&h=300&q=80" 
   },
   { 
+    id: '17', 
+    name: "FAROFA DO BARÃO", 
+    category: Category.SIDE, 
+    cost: 12.50, 
+    price: 19.90, 
+    description: "A autêntica farofa crocante com bacon e temperos secretos.", 
+    stock: 50, 
+    image: "https://images.unsplash.com/photo-1599307734111-d922a96993a4?auto=format&fit=crop&w=400&h=300&q=80" 
+  },
+  { 
+    id: '18', 
+    name: "CARVÃO DO BARÃO", 
+    category: Category.SIDE, 
+    cost: 18.00, 
+    price: 29.90, 
+    description: "Carvão premium de acácia negra. Mais calor e durabilidade para seu churrasco.", 
+    stock: 30, 
+    image: "https://images.unsplash.com/photo-1533630713315-99df856be306?auto=format&fit=crop&w=400&h=300&q=80" 
+  },
+  { 
+    id: '19', 
+    name: "DICAS DO BARÃO", 
+    category: Category.SPECIAL, 
+    cost: 0, 
+    price: 0, 
+    description: "Aprenda os segredos do mestre: ponto da carne, preparo da brasa e muito mais.", 
+    stock: 999, 
+    image: "https://images.unsplash.com/photo-1529193591184-b1d58fab356c?auto=format&fit=crop&w=400&h=300&q=80" 
+  },
+  { 
     id: '10', 
     name: "ESP. FRALDINHA", 
     category: Category.SPECIAL, 
@@ -105,66 +135,6 @@ export const INITIAL_PRODUCTS: Product[] = [
     description: "Fraldinha premium com gordura equilibrada.", 
     stock: 20, 
     image: "https://images.unsplash.com/photo-1546241072-48010ad28c2c?auto=format&fit=crop&w=400&h=300&q=80" 
-  },
-  { 
-    id: '11', 
-    name: "ESP. MEDALHÃO FGO", 
-    category: Category.SPECIAL, 
-    cost: 47.37, 
-    price: 58.90, 
-    description: "Medalhão de frango envolto em bacon crocante.", 
-    stock: 20, 
-    image: "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&w=400&h=300&q=80" 
-  },
-  { 
-    id: '12', 
-    name: "ESP. CONT. FILÉ", 
-    category: Category.SPECIAL, 
-    cost: 60.03, 
-    price: 73.90, 
-    description: "Contra filé de novilha com capa de gordura.", 
-    stock: 20, 
-    image: "https://images.unsplash.com/photo-1603048297172-c92544798d5a?auto=format&fit=crop&w=400&h=300&q=80" 
-  },
-  { 
-    id: '13', 
-    name: "ESP. ALCATRA", 
-    category: Category.SPECIAL, 
-    cost: 60.03, 
-    price: 73.90, 
-    description: "Corte de alcatra macio e sem gordura.", 
-    stock: 20, 
-    image: "https://images.unsplash.com/photo-1529193591184-b1d58fab356c?auto=format&fit=crop&w=400&h=300&q=80" 
-  },
-  { 
-    id: '14', 
-    name: "ESP. FILÉ MIGNON", 
-    category: Category.SPECIAL, 
-    cost: 84.29, 
-    price: 103.90, 
-    description: "A maciez suprema do filé mignon em espeto.", 
-    stock: 20, 
-    image: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=400&h=300&q=80" 
-  },
-  { 
-    id: '15', 
-    name: "ESP. MAMINHA", 
-    category: Category.SPECIAL, 
-    cost: 58.97, 
-    price: 72.90, 
-    description: "Maminha selecionada, sabor marcante e suculento.", 
-    stock: 20, 
-    image: "https://images.unsplash.com/photo-1516100882582-76c9a58b3928?auto=format&fit=crop&w=400&h=300&q=80" 
-  },
-  { 
-    id: '16', 
-    name: "ESP. CORDEIRO", 
-    category: Category.SPECIAL, 
-    cost: 89.57, 
-    price: 110.90, 
-    description: "Carne de cordeiro nobre com tempero de hortelã.", 
-    stock: 20, 
-    image: "https://images.unsplash.com/photo-1602491673980-73aa38de027a?auto=format&fit=crop&w=400&h=300&q=80" 
   }
 ];
 
@@ -172,5 +142,5 @@ export const CATEGORY_LABELS = {
   [Category.TRADITIONAL]: 'Tradicionais',
   [Category.SPECIAL]: 'Especiais',
   [Category.DRINK]: 'Bebidas',
-  [Category.SIDE]: 'Acompanhamentos'
+  [Category.SIDE]: 'Farofa do Barão'
 };

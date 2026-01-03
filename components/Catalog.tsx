@@ -53,7 +53,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, cart, addToCart, updateCart
         </div>
       </section>
 
-      {/* Category Filter with Animation - Aumentado conforme solicitado */}
+      {/* Category Filter with Animation */}
       <div className="flex gap-4 overflow-x-auto pb-6 no-scrollbar -mx-4 px-4 sticky top-16 md:top-20 z-30 bg-slate-50/90 backdrop-blur-md pt-6 fade-in-up" style={{animationDelay: '0.2s'}}>
         <button 
           onClick={() => setActiveCategory('all')}
@@ -70,7 +70,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, cart, addToCart, updateCart
             {cat === Category.TRADITIONAL && <i className="fas fa-fire mr-3 text-ferrari"></i>}
             {cat === Category.SPECIAL && <i className="fas fa-crown mr-3 text-ferrari"></i>}
             {cat === Category.DRINK && <i className="fas fa-wine-glass mr-3 text-ferrari"></i>}
-            {cat === Category.SIDE && <i className="fas fa-plate-wheat mr-3 text-ferrari"></i>}
+            {cat === Category.SIDE && <i className="fas fa-bowl-rice mr-3 text-ferrari"></i>}
             {CATEGORY_LABELS[cat]}
           </button>
         ))}
@@ -81,6 +81,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, cart, addToCart, updateCart
         {filteredProducts.map((product, index) => {
           const cartItem = cart.find(i => i.id === product.id);
           const hasStock = product.stock > 0;
+          const isDica = product.name === "DICAS DO BARÃO";
           
           return (
             <div 
@@ -112,13 +113,23 @@ const Catalog: React.FC<CatalogProps> = ({ products, cart, addToCart, updateCart
                 
                 <div className="flex items-center justify-between mt-auto">
                   <div className="flex flex-col">
-                    <span className="text-3xl font-black text-onyx tracking-tighter">
-                      <span className="text-ferrari text-xs align-top mr-1">R$</span>
-                      {product.price.toFixed(2).replace('.', ',')}
-                    </span>
+                    {product.price > 0 ? (
+                      <span className="text-3xl font-black text-onyx tracking-tighter">
+                        <span className="text-ferrari text-xs align-top mr-1">R$</span>
+                        {product.price.toFixed(2).replace('.', ',')}
+                      </span>
+                    ) : (
+                      <span className="text-2xl font-black text-ferrari tracking-tighter uppercase italic">
+                        Grátis
+                      </span>
+                    )}
                   </div>
 
-                  {cartItem ? (
+                  {isDica ? (
+                    <button className="h-16 px-6 flex items-center justify-center rounded-[1.5rem] bg-onyx text-white font-black uppercase text-[10px] tracking-widest hover:bg-ferrari transition-all shadow-xl">
+                      Ver Agora
+                    </button>
+                  ) : cartItem ? (
                     <div className="flex items-center gap-3 bg-slate-50 rounded-[1.25rem] p-2 border border-gray-100 shadow-inner">
                       <button 
                         onClick={() => updateCartQuantity(product.id, -1)}
