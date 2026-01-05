@@ -13,6 +13,38 @@ interface AdminPanelProps {
   onLogout: () => void;
 }
 
+// Utilitário para redimensionar imagens base64 e evitar erro de cota do LocalStorage
+const resizeImage = (base64Str: string, maxWidth = 400, maxHeight = 400): Promise<string> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.src = base64Str;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height) {
+        if (width > maxWidth) {
+          height *= maxWidth / width;
+          width = maxWidth;
+        }
+      } else {
+        if (height > maxHeight) {
+          width *= maxHeight / height;
+          height = maxHeight;
+        }
+      }
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx?.drawImage(img, 0, 0, width, height);
+      // Salva como JPEG com 70% de qualidade para reduzir drasticamente o tamanho
+      resolve(canvas.toDataURL('image/jpeg', 0.7));
+    };
+    img.onerror = () => resolve(base64Str); // Fallback se falhar
+  });
+};
+
 const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, setOrders, logo, setLogo, onLogout }) => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'orders' | 'inventory' | 'store'>('dashboard');
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
@@ -414,11 +446,15 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
               ) : (
                 <div className="w-56 h-56 bg-slate-200 rounded-[3rem] flex items-center justify-center text-slate-400 text-7xl shadow-inner"><i className="fas fa-camera"></i></div>
               )}
-              <input type="file" ref={fileInputRef} onChange={(e) => {
+              <input type="file" ref={fileInputRef} onChange={async (e) => {
                 const file = e.target.files?.[0];
                 if (file) {
                   const reader = new FileReader();
-                  reader.onloadend = () => setLogo(reader.result as string);
+                  reader.onloadend = async () => {
+                    // Fix: Compressão de imagem antes de salvar para evitar erro de LocalStorage
+                    const resized = await resizeImage(reader.result as string);
+                    setLogo(resized);
+                  };
                   reader.readAsDataURL(file);
                 }
               }} accept="image/*" className="hidden" />
@@ -471,11 +507,15 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
               <div className="flex items-center gap-10">
                 <img src={newProduct.image} className="w-32 h-32 rounded-3xl object-cover shadow-xl border-4 border-white" />
                 <button type="button" onClick={() => modalFileInputRef.current?.click()} className="px-10 py-5 bg-slate-100 text-gray-500 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-slate-200">MUDAR FOTO</button>
-                <input type="file" ref={modalFileInputRef} onChange={(e) => {
+                <input type="file" ref={modalFileInputRef} onChange={async (e) => {
                   const file = e.target.files?.[0];
                   if (file) {
                     const reader = new FileReader();
-                    reader.onloadend = () => setNewProduct(prev => ({ ...prev, image: reader.result as string }));
+                    reader.onloadend = async () => {
+                      // Fix: Compressão de fotos de produtos
+                      const resized = await resizeImage(reader.result as string, 600, 600);
+                      setNewProduct(prev => ({ ...prev, image: resized }));
+                    };
                     reader.readAsDataURL(file);
                   }
                 }} className="hidden" />

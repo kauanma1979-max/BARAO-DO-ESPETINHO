@@ -37,18 +37,29 @@ const App: React.FC = () => {
   useEffect(() => {
     const checkConnection = async () => {
       try {
-        const { error } = await supabase.from('products').select('count', { count: 'exact', head: true });
-        if (error) throw error;
+        // Tenta uma consulta simples para validar a conexão
+        const { error } = await supabase.from('products').select('id').limit(1);
+        
+        if (error) {
+          // Erro 42P01 significa que a conexão está OK, mas a tabela ainda não foi criada no Passo 3
+          if (error.code === '42P01') {
+            console.warn("Supabase conectado! Aviso: Tabelas não encontradas no banco. Siga o tutorial de SQL.");
+            setDbConnected(true); 
+            return;
+          }
+          throw error;
+        }
         setDbConnected(true);
-      } catch (err) {
-        console.error("Supabase Connection Error:", err);
+      } catch (err: any) {
+        // Fix: Log detalhado em vez de [object Object]
+        console.error("Erro Crítico de Conexão Supabase:", err?.message || err);
         setDbConnected(false);
       }
     };
     checkConnection();
   }, []);
 
-  // Persistência local (backup)
+  // Persistência local (backup) com tratamento de erro melhorado
   useEffect(() => {
     try {
       localStorage.setItem('products', JSON.stringify(products));
@@ -67,9 +78,12 @@ const App: React.FC = () => {
 
   useEffect(() => {
     try {
-      localStorage.setItem('storeLogo', logo);
+      if (logo) {
+        localStorage.setItem('storeLogo', logo);
+      }
     } catch (e) {
-      console.error('Falha ao salvar logo: Imagem muito grande para o LocalStorage.');
+      // Este erro agora será evitado pela compressão no AdminPanel
+      console.error('Erro ao persistir logo:', e);
     }
   }, [logo]);
 
@@ -131,7 +145,6 @@ const App: React.FC = () => {
 
     const enrichedOrder = { ...order, mapsUrl };
     
-    // Tenta salvar no Supabase se estiver conectado
     if (dbConnected) {
       try {
         await supabase.from('orders').insert([{
