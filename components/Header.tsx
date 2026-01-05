@@ -9,9 +9,10 @@ interface HeaderProps {
   onAdminClick: () => void;
   isAdmin: boolean;
   logo?: string;
+  dbConnected: boolean | null; // null = carregando, true = ok, false = erro
 }
 
-const Header: React.FC<HeaderProps> = ({ cartCount, onCartClick, onLogoClick, onAboutClick, onAdminClick, isAdmin, logo }) => {
+const Header: React.FC<HeaderProps> = ({ cartCount, onCartClick, onLogoClick, onAboutClick, onAdminClick, isAdmin, logo, dbConnected }) => {
   return (
     <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm">
       <div className="h-1.5 header-animated w-full"></div>
@@ -26,8 +27,15 @@ const Header: React.FC<HeaderProps> = ({ cartCount, onCartClick, onLogoClick, on
             </div>
           )}
           <div>
-            <h1 className="text-lg md:text-2xl font-black font-heading text-onyx tracking-tighter uppercase leading-none">Barão do <span className="text-ferrari">Espetinho</span></h1>
-            <p className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest leading-none mt-1">ESPETINHOS PREMIUM PARA ASSAR</p>
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg md:text-2xl font-black font-heading text-onyx tracking-tighter uppercase leading-none">Barão do <span className="text-ferrari">Espetinho</span></h1>
+              {/* Ícone de Conexão com o Banco */}
+              <div className="flex items-center" title={dbConnected === true ? "Banco de Dados Online" : "Erro de Conexão"}>
+                <div className={`w-2 h-2 rounded-full ${dbConnected === true ? 'bg-green-500 animate-pulse' : dbConnected === false ? 'bg-red-500' : 'bg-gray-300'}`}></div>
+                <i className={`fas fa-cloud ml-1.5 text-[10px] ${dbConnected === true ? 'text-green-500' : dbConnected === false ? 'text-red-500' : 'text-gray-300'}`}></i>
+              </div>
+            </div>
+            <p className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest leading-none mt-1">Sincronizado com a Nuvem</p>
           </div>
         </div>
 

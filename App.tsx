@@ -10,11 +10,13 @@ import AdminPanel from './components/AdminPanel';
 import About from './components/About';
 import Footer from './components/Footer';
 import { GoogleGenAI } from "@google/genai";
+import { supabase } from './supabaseClient';
 
 const DEFAULT_LOGO = 'https://raw.githubusercontent.com/ai-code-gen/assets/main/barao_logo.png';
 
 const App: React.FC = () => {
   const [view, setView] = useState<'catalog' | 'cart' | 'checkout' | 'admin' | 'success' | 'about'>('catalog');
+  const [dbConnected, setDbConnected] = useState<boolean | null>(null);
   const [products, setProducts] = useState<Product[]>(() => {
     const saved = localStorage.getItem('products');
     return saved ? JSON.parse(saved) : INITIAL_PRODUCTS;
@@ -31,7 +33,22 @@ const App: React.FC = () => {
   const [lastOrder, setLastOrder] = useState<Order | null>(null);
   const [isGeneratingMap, setIsGeneratingMap] = useState(false);
 
-  // Persistência com tratamento de erros para evitar tela branca (QuotaExceededError)
+  // Verifica conexão com Supabase ao iniciar
+  useEffect(() => {
+    const checkConnection = async () => {
+      try {
+        const { error } = await supabase.from('products').select('count', { count: 'exact', head: true });
+        if (error) throw error;
+        setDbConnected(true);
+      } catch (err) {
+        console.error("Supabase Connection Error:", err);
+        setDbConnected(false);
+      }
+    };
+    checkConnection();
+  }, []);
+
+  // Persistência local (backup)
   useEffect(() => {
     try {
       localStorage.setItem('products', JSON.stringify(products));
@@ -91,7 +108,7 @@ const App: React.FC = () => {
       try {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
+          model: "gemini-3-flash-preview",
           contents: `Localize o endereço no Google Maps e retorne o link de compartilhamento para: ${order.customer.address}`,
           config: {
             tools: [{ googleMaps: {} }],
@@ -114,6 +131,23 @@ const App: React.FC = () => {
 
     const enrichedOrder = { ...order, mapsUrl };
     
+    // Tenta salvar no Supabase se estiver conectado
+    if (dbConnected) {
+      try {
+        await supabase.from('orders').insert([{
+          id: enrichedOrder.id,
+          customer_name: enrichedOrder.customer.name,
+          customer_phone: enrichedOrder.customer.phone,
+          customer_address: enrichedOrder.customer.address,
+          total: enrichedOrder.total,
+          status: enrichedOrder.status,
+          items: enrichedOrder.items
+        }]);
+      } catch (err) {
+        console.error("Erro ao salvar no Supabase:", err);
+      }
+    }
+
     setOrders(prev => [...prev, enrichedOrder]);
     setProducts(prev => prev.map(p => {
       const cartItem = order.items.find(i => i.id === p.id);
@@ -141,6 +175,7 @@ const App: React.FC = () => {
         onAdminClick={handleEnterAdmin}
         isAdmin={isAdmin}
         logo={logo}
+        dbConnected={dbConnected}
       />
 
       <main className="flex-grow pb-20 pt-4 px-2 sm:px-4 md:px-0">
