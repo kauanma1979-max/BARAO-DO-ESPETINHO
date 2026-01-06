@@ -9,86 +9,36 @@ import Checkout from './components/Checkout';
 import AdminPanel from './components/AdminPanel';
 import About from './components/About';
 import Footer from './components/Footer';
-import { GoogleGenAI } from "@google/genai";
-import { supabase } from './supabaseClient';
 
 const DEFAULT_LOGO = 'https://raw.githubusercontent.com/ai-code-gen/assets/main/barao_logo.png';
 
 const App: React.FC = () => {
   const [view, setView] = useState<'catalog' | 'cart' | 'checkout' | 'admin' | 'success' | 'about'>('catalog');
-  const [dbConnected, setDbConnected] = useState<boolean | null>(null);
-  const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
+  const [products, setProducts] = useState<Product[]>(() => {
+    const saved = localStorage.getItem('products');
+    return saved ? JSON.parse(saved) : INITIAL_PRODUCTS;
+  });
   const [logo, setLogo] = useState<string>(() => localStorage.getItem('storeLogo') || DEFAULT_LOGO);
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<Order[]>(() => {
+    const saved = localStorage.getItem('orders');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [isAdmin, setIsAdmin] = useState(false);
   const [lastOrder, setLastOrder] = useState<Order | null>(null);
-  const [isGeneratingMap, setIsGeneratingMap] = useState(false);
 
-  // 1. Verificar Conexão e Carregar Dados do Supabase
-  useEffect(() => {
-    const initData = async () => {
-      try {
-        // Testa conexão na tabela 'produtos' (nome em português como na sua foto)
-        const { data: dbProducts, error: pError } = await supabase
-          .from('produtos')
-          .select('*');
-
-        if (pError) throw pError;
-
-        if (dbProducts && dbProducts.length > 0) {
-          // Mapeia do banco (Português) para o App (Inglês)
-          const mappedProducts: Product[] = dbProducts.map(p => ({
-            id: p.id,
-            name: p.nome,
-            category: p.categoria as Category,
-            price: p.preco,
-            cost: p.custo,
-            description: p.descricao,
-            stock: p.estoque,
-            image: p.imagem
-          }));
-          setProducts(mappedProducts);
-        }
-        
-        // Carrega pedidos da tabela 'pedidos'
-        const { data: dbOrders } = await supabase.from('pedidos').select('*');
-        if (dbOrders) {
-           const mappedOrders: Order[] = dbOrders.map(o => ({
-             id: o.id,
-             date: o.created_at,
-             customer: { 
-               name: o.customer_name, 
-               phone: o.customer_phone, 
-               address: o.customer_address,
-               deliveryType: o.customer_address ? 'delivery' : 'pickup'
-             },
-             items: o.items,
-             total: o.total,
-             status: o.status as OrderStatus,
-             subtotal: o.total, // Simplificado
-             deliveryFee: 0,
-             paymentMethod: o.payment_method || 'pix'
-           }));
-           setOrders(mappedOrders);
-        }
-
-        setDbConnected(true);
-      } catch (err: any) {
-        console.error("Erro Supabase:", err?.message || err);
-        setDbConnected(false);
-        // Fallback para localStorage se falhar
-        const savedProducts = localStorage.getItem('products');
-        if (savedProducts) setProducts(JSON.parse(savedProducts));
-      }
-    };
-    initData();
-  }, []);
-
-  // Persistência local apenas como backup de segurança
+  // Persistência local automática
   useEffect(() => {
     localStorage.setItem('products', JSON.stringify(products));
   }, [products]);
+
+  useEffect(() => {
+    localStorage.setItem('orders', JSON.stringify(orders));
+  }, [orders]);
+
+  useEffect(() => {
+    localStorage.setItem('storeLogo', logo);
+  }, [logo]);
 
   const cartTotalItems = useMemo(() => cart.reduce((acc, item) => acc + item.quantity, 0), [cart]);
   const cartSubtotal = useMemo(() => cart.reduce((acc, item) => acc + (item.price * item.quantity), 0), [cart]);
@@ -108,48 +58,22 @@ const App: React.FC = () => {
     }).filter(item => item.quantity > 0));
   };
 
-  const handleCreateOrder = async (order: Order) => {
-    setIsGeneratingMap(true);
-    let mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.customer.address)}`;
-
+  const handleCreateOrder = (order: Order) => {
+    // URL do mapa para o admin e para o cliente
+    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.customer.address)}`;
     const enrichedOrder = { ...order, mapsUrl };
-    
-    if (dbConnected) {
-      try {
-        await supabase.from('pedidos').insert([{
-          id: enrichedOrder.id,
-          customer_name: enrichedOrder.customer.name,
-          customer_phone: enrichedOrder.customer.phone,
-          customer_address: enrichedOrder.customer.address,
-          total: enrichedOrder.total,
-          status: enrichedOrder.status,
-          items: enrichedOrder.items,
-          payment_method: enrichedOrder.paymentMethod
-        }]);
-        
-        // Atualiza estoque no banco para cada item
-        for (const item of order.items) {
-           const product = products.find(p => p.id === item.id);
-           if (product) {
-             await supabase.from('produtos')
-               .update({ estoque: product.stock - item.quantity })
-               .eq('id', item.id);
-           }
-        }
-      } catch (err) {
-        console.error("Erro ao salvar pedido no Supabase:", err);
-      }
-    }
 
     setOrders(prev => [...prev, enrichedOrder]);
+    
+    // Atualizar estoque localmente
     setProducts(prev => prev.map(p => {
       const cartItem = order.items.find(i => i.id === p.id);
-      if (cartItem) return { ...p, stock: p.stock - cartItem.quantity };
+      if (cartItem) return { ...p, stock: Math.max(0, p.stock - cartItem.quantity) };
       return p;
     }));
+
     setCart([]);
     setLastOrder(enrichedOrder);
-    setIsGeneratingMap(false);
     setView('success');
   };
 
@@ -163,24 +87,96 @@ const App: React.FC = () => {
         onAdminClick={() => { setIsAdmin(true); setView('admin'); }}
         isAdmin={isAdmin}
         logo={logo}
-        dbConnected={dbConnected}
       />
+      
       <main className="flex-grow pb-20 pt-4 px-2 sm:px-4 md:px-0">
         <div className="max-w-7xl mx-auto">
-          {view === 'catalog' && <Catalog products={products} addToCart={addToCart} cart={cart} updateCartQuantity={updateCartQuantity} />}
+          {view === 'catalog' && (
+            <Catalog 
+              products={products} 
+              addToCart={addToCart} 
+              cart={cart} 
+              updateCartQuantity={updateCartQuantity} 
+            />
+          )}
+          
           {view === 'about' && <About onBack={() => setView('catalog')} />}
-          {view === 'cart' && <Cart items={cart} onUpdateQuantity={updateCartQuantity} onRemove={id => setCart(c => c.filter(i => i.id !== id))} onCheckout={() => setView('checkout')} subtotal={cartSubtotal} />}
-          {view === 'checkout' && <Checkout items={cart} subtotal={cartSubtotal} onSubmit={handleCreateOrder} onBack={() => setView('cart')} />}
-          {view === 'admin' && isAdmin && <AdminPanel products={products} orders={orders} setProducts={setProducts} setOrders={setOrders} logo={logo} setLogo={setLogo} onLogout={() => { setIsAdmin(false); setView('catalog'); }} />}
+          
+          {view === 'cart' && (
+            <Cart 
+              items={cart} 
+              onUpdateQuantity={updateCartQuantity} 
+              onRemove={id => setCart(c => c.filter(i => i.id !== id))} 
+              onCheckout={() => setView('checkout')} 
+              subtotal={cartSubtotal} 
+            />
+          )}
+          
+          {view === 'checkout' && (
+            <Checkout 
+              items={cart} 
+              subtotal={cartSubtotal} 
+              onSubmit={handleCreateOrder} 
+              onBack={() => setView('cart')} 
+            />
+          )}
+          
+          {view === 'admin' && isAdmin && (
+            <AdminPanel 
+              products={products} 
+              orders={orders} 
+              setProducts={setProducts} 
+              setOrders={setOrders} 
+              logo={logo} 
+              setLogo={setLogo} 
+              onLogout={() => { setIsAdmin(false); setView('catalog'); }}
+              onSync={() => {}} 
+            />
+          )}
+
           {view === 'success' && lastOrder && (
-            <div className="text-center py-20 px-4 bg-white rounded-3xl shadow-xl max-w-2xl mx-auto mt-10 border-t-8 border-ferrari animate-fade-in">
-               <h1 className="text-4xl font-black mb-4 font-heading text-onyx uppercase">Pedido Confirmado!</h1>
-               <p className="text-xl text-gray-600 mb-8">Nº #{lastOrder.id}</p>
-               <button onClick={() => setView('catalog')} className="bg-onyx text-white px-10 py-4 rounded-xl font-bold uppercase">Voltar ao Início</button>
+            <div className="text-center py-20 px-4 bg-white rounded-[3rem] shadow-xl max-w-2xl mx-auto mt-10 border-t-8 border-ferrari animate-fade-in">
+              <div className="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-8">
+                <i className="fas fa-check text-5xl"></i>
+              </div>
+              <h1 className="text-4xl font-black mb-4 font-heading text-onyx uppercase tracking-tighter">Pedido Confirmado!</h1>
+              <p className="text-xl text-gray-500 mb-8 font-bold">O Barão já está preparando a brasa para você.</p>
+              
+              <div className="bg-slate-50 p-6 rounded-2xl mb-8 text-left border border-gray-100">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">CÓDIGO DO PEDIDO</p>
+                <p className="text-2xl font-black text-onyx italic mb-4">#{lastOrder.id}</p>
+                
+                {lastOrder.customer.deliveryType === 'delivery' && lastOrder.mapsUrl && (
+                  <a 
+                    href={lastOrder.mapsUrl} 
+                    target="_blank"
+                    className="flex items-center justify-center gap-3 p-4 bg-white text-blue-600 rounded-xl font-black uppercase text-[10px] tracking-widest border border-blue-100 hover:bg-blue-50 transition-all shadow-sm"
+                  >
+                    <i className="fas fa-map-location-dot"></i> Ver Endereço no Mapa
+                  </a>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-4">
+                <a 
+                  href={`https://wa.me/55${lastOrder.customer.phone.replace(/\D/g, '')}`} 
+                  target="_blank"
+                  className="bg-green-500 text-white py-5 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 shadow-lg hover:bg-green-600 transition-all"
+                >
+                  <i className="fab fa-whatsapp text-lg"></i> Falar com o Barão
+                </a>
+                <button 
+                  onClick={() => setView('catalog')} 
+                  className="bg-onyx text-white px-12 py-5 rounded-2xl font-black uppercase tracking-widest hover:bg-ferrari transition-all shadow-lg"
+                >
+                  Voltar ao Cardápio
+                </button>
+              </div>
             </div>
           )}
         </div>
       </main>
+
       <Footer logo={logo} />
     </div>
   );

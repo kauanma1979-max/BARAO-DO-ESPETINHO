@@ -11,20 +11,18 @@ interface CatalogProps {
 }
 
 const Catalog: React.FC<CatalogProps> = ({ products, cart, addToCart, updateCartQuantity }) => {
-  // Inicializamos com a primeira categoria disponível já que o filtro "Tudo" foi removido
   const [activeCategory, setActiveCategory] = useState<Category | 'all'>(Category.TRADITIONAL);
 
   const filteredProducts = activeCategory === 'all' 
     ? products 
     : products.filter(p => p.category === activeCategory);
 
-  // Filtra as categorias para não exibir o botão "Dicas do Barão"
   const categories = (Object.keys(CATEGORY_LABELS) as Category[]).filter(cat => cat !== Category.TIPS);
 
   return (
     <div className="space-y-6 md:space-y-10 py-6 overflow-hidden">
       {/* Hero Section */}
-      <section className="relative h-48 md:h-[400px] rounded-[2rem] md:rounded-[3rem] overflow-hidden group shadow-xl fade-in-up">
+      <section className="relative h-56 md:h-[450px] rounded-[2rem] md:rounded-[3rem] overflow-hidden group shadow-xl fade-in-up">
         <img 
           src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=1200&q=80" 
           className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" 
@@ -32,18 +30,25 @@ const Catalog: React.FC<CatalogProps> = ({ products, cart, addToCart, updateCart
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent"></div>
         <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-16">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="bg-ferrari text-white px-4 py-1 rounded-full text-[10px] md:text-xl font-black uppercase tracking-widest shadow-xl border border-white/20">
+          <div className="flex flex-wrap items-center gap-3 mb-4">
+            <span className="bg-ferrari text-white px-4 py-1 rounded-full text-[10px] md:text-sm font-black uppercase tracking-widest shadow-xl border border-white/20">
               EXPERIÊNCIA PREMIUM
             </span>
+            <a 
+              href="https://blog-bar-o-do-espetinho.vercel.app/" 
+              target="_blank" 
+              className="bg-white/10 backdrop-blur-md text-white px-4 py-1 rounded-full text-[10px] md:text-sm font-black uppercase tracking-widest border border-white/20 hover:bg-white hover:text-onyx transition-all"
+            >
+              <i className="fas fa-newspaper mr-2"></i> Blog do Barão
+            </a>
           </div>
-          <h2 className="text-white text-2xl md:text-5xl lg:text-6xl font-black font-heading tracking-tighter uppercase leading-none drop-shadow-2xl">
-            Sabor que vem da <span className="text-ferrari italic">Brasa</span>
+          <h2 className="text-white text-2xl md:text-5xl lg:text-7xl font-black font-heading tracking-tighter uppercase leading-none drop-shadow-2xl">
+            Sabor que vem da <br /> <span className="text-ferrari italic">Brasa</span>
           </h2>
         </div>
       </section>
 
-      {/* Category Filter - Expanded with Charcoal but removed Tips as requested */}
+      {/* Category Filter */}
       <div className="flex gap-2 md:gap-4 overflow-x-auto pb-4 no-scrollbar -mx-4 px-4 sticky top-16 md:top-20 z-30 bg-slate-50/95 backdrop-blur-md pt-4 fade-in-up">
         {categories.map(cat => (
           <button 
@@ -61,12 +66,11 @@ const Catalog: React.FC<CatalogProps> = ({ products, cart, addToCart, updateCart
         ))}
       </div>
 
-      {/* Product Grid - Compact and Professional */}
+      {/* Product Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-6">
         {filteredProducts.map((product, index) => {
           const cartItem = cart.find(i => i.id === product.id);
           const hasStock = product.stock > 0;
-          const isDica = product.category === Category.TIPS;
           
           return (
             <div 
@@ -98,21 +102,13 @@ const Catalog: React.FC<CatalogProps> = ({ products, cart, addToCart, updateCart
                 
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-1.5 mt-auto">
                   <div className="flex flex-col">
-                    {product.price > 0 ? (
-                      <span className="text-xs md:text-xl font-black text-onyx tracking-tighter">
-                        <span className="text-ferrari text-[7px] md:text-[10px] align-top mr-0.5">R$</span>
-                        {product.price.toFixed(2).replace('.', ',')}
-                      </span>
-                    ) : (
-                      <span className="text-[10px] md:text-base font-black text-ferrari tracking-tighter uppercase italic">Cortesia</span>
-                    )}
+                    <span className="text-xs md:text-xl font-black text-onyx tracking-tighter">
+                      <span className="text-ferrari text-[7px] md:text-[10px] align-top mr-0.5">R$</span>
+                      {product.price.toFixed(2).replace('.', ',')}
+                    </span>
                   </div>
 
-                  {isDica ? (
-                    <button className="h-8 md:h-12 w-full md:w-auto px-3 md:px-5 flex items-center justify-center rounded-lg md:rounded-2xl bg-onyx text-white font-black uppercase text-[7px] md:text-[10px] tracking-widest hover:bg-ferrari transition-all shadow-md">
-                      Explorar
-                    </button>
-                  ) : cartItem ? (
+                  {cartItem ? (
                     <div className="flex items-center gap-1 md:gap-2 bg-slate-50 rounded-lg md:rounded-xl p-0.5 md:p-1 border border-gray-100 shadow-inner">
                       <button 
                         onClick={() => updateCartQuantity(product.id, -1)}
