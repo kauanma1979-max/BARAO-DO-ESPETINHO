@@ -1,7 +1,11 @@
+
 import React, { useState, useMemo, useRef } from 'react';
 import { Product, Order, OrderStatus, Category } from '../types';
 import { CATEGORY_LABELS } from '../constants';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
+  PieChart, Pie, Sector, Legend
+} from 'recharts';
 
 interface AdminPanelProps {
   products: Product[];
@@ -52,12 +56,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
 
   // --- Lógica de Backup e Restore ---
   const handleBackup = () => {
-    const data = {
-      products,
-      orders,
-      logo,
-      timestamp: new Date().toISOString()
-    };
+    const data = { products, orders, logo, timestamp: new Date().toISOString() };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -70,7 +69,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
   const handleRestore = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
@@ -82,44 +80,50 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
             if (data.logo) setLogo(data.logo);
             alert('Backup restaurado com sucesso! 🥩');
           }
-        } else {
-          alert('Arquivo de backup inválido.');
         }
-      } catch (err) {
-        alert('Erro ao processar o arquivo.');
-      }
+      } catch (err) { alert('Erro ao processar o arquivo.'); }
     };
     reader.readAsText(file);
     e.target.value = '';
   };
 
-  // --- Lógica do Gráfico Categorizado ---
-  const salesByCategory = useMemo(() => {
-    const stats: Record<string, { name: string, value: number }[]> = {};
-    
+  // --- Formatação de Data e Hora ---
+  const formatOrderDate = (dateIso: string) => {
+    const date = new Date(dateIso);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = String(date.getFullYear()).slice(-2);
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+  };
+
+  // --- Lógica Analítica Moderna ---
+  const dashboardData = useMemo(() => {
+    const categoryTotals: Record<string, number> = {};
+    const productSales: Record<string, number> = {};
+
     orders.forEach(order => {
       order.items.forEach(item => {
         const cat = item.category || Category.TRADITIONAL;
-        if (cat === Category.TIPS) return; // Ignorar dicas nos gráficos
+        if (cat === Category.TIPS) return;
         
-        if (!stats[cat]) stats[cat] = [];
-        const shortName = item.name.split(' ').pop() || item.name;
-        const existing = stats[cat].find(i => i.name === shortName);
-        
-        if (existing) {
-          existing.value += item.quantity;
-        } else {
-          stats[cat].push({ name: shortName, value: item.quantity });
-        }
+        categoryTotals[cat] = (categoryTotals[cat] || 0) + (item.price * item.quantity);
+        productSales[item.name] = (productSales[item.name] || 0) + item.quantity;
       });
     });
 
-    // Ordenar itens dentro de cada categoria por volume de vendas
-    Object.keys(stats).forEach(cat => {
-      stats[cat].sort((a, b) => b.value - a.value);
-    });
+    const pieData = Object.entries(categoryTotals).map(([cat, value]) => ({
+      name: CATEGORY_LABELS[cat as Category] || cat,
+      value
+    })).sort((a, b) => b.value - a.value);
 
-    return stats;
+    const barData = Object.entries(productSales).map(([name, value]) => ({
+      name: name.toUpperCase(),
+      vendas: value
+    })).sort((a, b) => b.vendas - a.vendas).slice(0, 10);
+
+    return { pieData, barData };
   }, [orders]);
 
   const handleSaveProduct = (e: React.FormEvent) => {
@@ -127,10 +131,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
     if (editingProductId) {
       setProducts(prev => prev.map(p => p.id === editingProductId ? { ...p, ...newProduct as Product } : p));
     } else {
-      const productToAdd = {
-        ...newProduct as Product,
-        id: Math.random().toString(36).substr(2, 9)
-      };
+      const productToAdd = { ...newProduct as Product, id: Math.random().toString(36).substr(2, 9) };
       setProducts(prev => [...prev, productToAdd]);
     }
     closeModal();
@@ -161,6 +162,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
     }, {} as Record<string, Product[]>);
   }, [products]);
 
+  const COLORS = ['#FF2800', '#1A1A1A', '#4A4A4A', '#8B0000', '#333333'];
+
   const textClass = "text-black text-shadow-gray font-black uppercase tracking-tighter";
 
   return (
@@ -177,16 +180,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
         </div>
         
         <div className="flex gap-4 w-full md:w-auto">
-          <button 
-            onClick={handleBackup} 
-            className="flex-1 md:flex-none px-6 py-4 bg-white border border-gray-200 text-onyx rounded-2xl font-black uppercase text-[9px] tracking-widest hover:border-ferrari transition-all flex items-center justify-center gap-2"
-          >
+          <button onClick={handleBackup} className="flex-1 md:flex-none px-6 py-4 bg-white border border-gray-200 text-onyx rounded-2xl font-black uppercase text-[9px] tracking-widest hover:border-ferrari transition-all flex items-center justify-center gap-2">
             <i className="fas fa-download text-ferrari"></i> BACKUP
           </button>
-          <button 
-            onClick={() => restoreInputRef.current?.click()} 
-            className="flex-1 md:flex-none px-6 py-4 bg-white border border-gray-200 text-onyx rounded-2xl font-black uppercase text-[9px] tracking-widest hover:border-ferrari transition-all flex items-center justify-center gap-2"
-          >
+          <button onClick={() => restoreInputRef.current?.click()} className="flex-1 md:flex-none px-6 py-4 bg-white border border-gray-200 text-onyx rounded-2xl font-black uppercase text-[9px] tracking-widest hover:border-ferrari transition-all flex items-center justify-center gap-2">
             <i className="fas fa-upload text-ferrari"></i> RESTAURAR
           </button>
           <input type="file" ref={restoreInputRef} className="hidden" accept=".json" onChange={handleRestore} />
@@ -196,7 +193,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
 
       <div className="flex gap-3 overflow-x-auto no-scrollbar mb-12">
         {[
-          { id: 'dashboard', icon: 'fa-chart-line', label: 'Resumo' },
+          { id: 'dashboard', icon: 'fa-chart-pie', label: 'Dashboard' },
           { id: 'orders', icon: 'fa-receipt', label: 'Pedidos' },
           { id: 'inventory', icon: 'fa-boxes-stacked', label: 'Estoque' },
           { id: 'store', icon: 'fa-store', label: 'Loja' }
@@ -216,106 +213,123 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
         <div className="space-y-12 animate-fade-in-up">
           {/* Métricas Principais */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-gray-50 group hover:border-ferrari transition-all">
-                <div className="flex justify-between items-start mb-4">
-                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Faturamento Bruto</span>
-                  <span className="text-2xl">💰</span>
+            <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-gray-50 hover:border-ferrari transition-all group">
+                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-4">Faturamento Bruto</span>
+                <p className="text-5xl font-black text-onyx italic tracking-tighter">R$ {orders.reduce((acc, o) => acc + o.total, 0).toLocaleString('pt-BR')}</p>
+                <div className="mt-4 flex items-center gap-2">
+                   <div className="w-8 h-1 bg-ferrari rounded-full"></div>
+                   <span className="text-[9px] font-bold text-gray-300 uppercase">Performance Total</span>
                 </div>
-                <p className="text-5xl font-black text-onyx italic tracking-tighter">R$ {orders.reduce((acc, o) => acc + o.total, 0).toFixed(0)}</p>
-                <p className="text-[9px] font-bold text-green-500 uppercase mt-2">↑ Crescimento constante</p>
             </div>
-            <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-gray-50 group hover:border-ferrari transition-all">
-                <div className="flex justify-between items-start mb-4">
-                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Pedidos Totais</span>
-                  <span className="text-2xl">🔥</span>
-                </div>
+            <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-gray-50 hover:border-ferrari transition-all">
+                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-4">Total de Pedidos</span>
                 <p className="text-5xl font-black text-onyx italic tracking-tighter">{orders.length}</p>
-                <p className="text-[9px] font-bold text-gray-300 uppercase mt-2">Volume histórico</p>
-            </div>
-            <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-gray-100 group hover:border-ferrari transition-all">
-                <div className="flex justify-between items-start mb-4">
-                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Ticket Médio</span>
-                  <span className="text-2xl">⚡</span>
+                <div className="mt-4 flex items-center gap-2 text-green-500">
+                   <i className="fas fa-arrow-up text-[10px]"></i>
+                   <span className="text-[9px] font-bold uppercase tracking-widest">Base de Clientes</span>
                 </div>
+            </div>
+            <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-gray-50 hover:border-ferrari transition-all">
+                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-4">Ticket Médio</span>
                 <p className="text-5xl font-black text-onyx italic tracking-tighter">
                   R$ {orders.length > 0 ? (orders.reduce((acc, o) => acc + o.total, 0) / orders.length).toFixed(0) : '0'}
                 </p>
-                <p className="text-[9px] font-bold text-gray-300 uppercase mt-2">Por pedido único</p>
-            </div>
-            <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-gray-100 group hover:border-ferrari transition-all">
-                <div className="flex justify-between items-start mb-4">
-                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Lucro Estimado</span>
-                  <span className="text-2xl">💎</span>
+                <div className="mt-4 flex items-center gap-2 text-blue-500">
+                   <i className="fas fa-bolt text-[10px]"></i>
+                   <span className="text-[9px] font-bold uppercase tracking-widest">Valor por Venda</span>
                 </div>
+            </div>
+            <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-gray-50 hover:border-ferrari transition-all">
+                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-4">Lucro Estimado</span>
                 <p className="text-5xl font-black text-ferrari italic tracking-tighter">
                   R$ {orders.reduce((acc, o) => {
                     const cost = o.items.reduce((sum, item) => sum + (item.cost * item.quantity), 0);
                     return acc + (o.total - cost);
-                  }, 0).toFixed(0)}
+                  }, 0).toLocaleString('pt-BR')}
                 </p>
-                <p className="text-[9px] font-bold text-ferrari uppercase mt-2">Após custos brutos</p>
+                <div className="mt-4 flex items-center gap-2">
+                   <div className="w-8 h-1 bg-onyx rounded-full"></div>
+                   <span className="text-[9px] font-bold text-gray-300 uppercase">Líquido Projetado</span>
+                </div>
             </div>
           </div>
 
-          {/* Gráficos por Categoria */}
-          <div className="space-y-12">
-            <div className="flex items-center gap-4 pl-6">
-              <div className="w-2 h-10 bg-ferrari rounded-full"></div>
-              <h3 className="text-3xl font-black text-onyx uppercase tracking-tighter">Vendas por Categoria</h3>
+          {/* Novos Gráficos Modernos */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+            {/* Gráfico Donut de Composição */}
+            <div className="bg-white p-12 rounded-[4rem] shadow-sm border border-gray-50 flex flex-col h-[550px]">
+              <div className="mb-10 text-center md:text-left">
+                <h3 className="text-2xl font-black text-onyx uppercase tracking-tighter">Composição de Receita</h3>
+                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">Participação por categoria de espetinho</p>
+              </div>
+              <div className="flex-grow">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={dashboardData.pieData}
+                      cx="50%"
+                      cy="45%"
+                      innerRadius={80}
+                      outerRadius={120}
+                      paddingAngle={8}
+                      dataKey="value"
+                      stroke="none"
+                    >
+                      {dashboardData.pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.25)', fontWeight: 900, textTransform: 'uppercase', fontSize: '10px' }}
+                      formatter={(value: number) => [`R$ ${value.toFixed(2)}`, 'Faturamento']}
+                    />
+                    <Legend 
+                      verticalAlign="bottom" 
+                      align="center"
+                      iconType="circle"
+                      formatter={(value) => <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">{value}</span>}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
             </div>
 
-            {Object.keys(salesByCategory).length > 0 ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                {/* Fix: Casting Object.entries(salesByCategory) to specific type to avoid 'unknown' map error */}
-                {(Object.entries(salesByCategory) as [string, { name: string; value: number }[]][]).map(([category, data]) => (
-                  <div key={category} className="bg-white p-10 rounded-[3.5rem] shadow-sm border border-gray-50 flex flex-col h-[500px]">
-                    <div className="flex justify-between items-center mb-10">
-                      <div>
-                        <h4 className="text-xl font-black text-onyx uppercase tracking-tighter">{CATEGORY_LABELS[category as Category]}</h4>
-                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Desempenho de itens individuais</p>
-                      </div>
-                      <span className="text-2xl">📊</span>
-                    </div>
-                    
-                    <div className="flex-grow w-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 40 }}>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                          <XAxis 
-                            dataKey="name" 
-                            axisLine={false} 
-                            tickLine={false} 
-                            interval={0}
-                            tick={{ fill: '#94a3b8', fontSize: 9, fontWeight: 800, textTransform: 'uppercase' }} 
-                            angle={-45}
-                            textAnchor="end"
-                          />
-                          <YAxis 
-                            axisLine={false} 
-                            tickLine={false} 
-                            tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }} 
-                          />
-                          <Tooltip 
-                            cursor={{ fill: '#f8fafc' }}
-                            contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', fontWeight: 900, textTransform: 'uppercase', fontSize: '10px' }}
-                          />
-                          <Bar dataKey="value" radius={[8, 8, 0, 0]} barSize={30}>
-                            {data.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#FF2800' : '#1A1A1A'} />
-                            ))}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-                ))}
+            {/* Ranking de Top Produtos - Barras Horizontais */}
+            <div className="bg-white p-12 rounded-[4rem] shadow-sm border border-gray-100 flex flex-col h-[550px]">
+              <div className="mb-10 text-center md:text-left">
+                <h3 className="text-2xl font-black text-onyx uppercase tracking-tighter">Ranking de Preferência</h3>
+                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">Os 10 itens mais pedidos do braseiro</p>
               </div>
-            ) : (
-              <div className="h-64 flex flex-col items-center justify-center border-4 border-dashed border-slate-50 rounded-[3rem] text-slate-200">
-                <i className="fas fa-chart-simple text-6xl mb-4"></i>
-                <p className="font-black uppercase tracking-widest text-xs">Aguardando as primeiras vendas para gerar gráficos</p>
+              <div className="flex-grow">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart 
+                    layout="vertical" 
+                    data={dashboardData.barData} 
+                    margin={{ left: 40, right: 40, top: 0, bottom: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                    <XAxis type="number" hide />
+                    <YAxis 
+                      dataKey="name" 
+                      type="category" 
+                      axisLine={false} 
+                      tickLine={false}
+                      width={100}
+                      tick={{ fill: '#1A1A1A', fontSize: 9, fontWeight: 900 }}
+                    />
+                    <Tooltip 
+                      cursor={{ fill: 'transparent' }}
+                      contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.25)', fontWeight: 900, textTransform: 'uppercase', fontSize: '10px' }}
+                    />
+                    <Bar dataKey="vendas" radius={[0, 20, 20, 0]} barSize={25}>
+                      {dashboardData.barData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={index === 0 ? '#FF2800' : '#1A1A1A'} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
-            )}
+            </div>
           </div>
         </div>
       )}
@@ -326,8 +340,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
             <table className="w-full text-left">
               <thead>
                 <tr className="border-b border-gray-100">
-                  <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">PEDIDO</th>
-                  <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">CLIENTE & CONTATO</th>
+                  <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">PEDIDO & DATA</th>
+                  <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">CLIENTE</th>
+                  <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">LOCALIZAÇÃO</th>
                   <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">TOTAL</th>
                   <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">STATUS</th>
                 </tr>
@@ -335,27 +350,22 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
               <tbody>
                 {orders.slice().reverse().map(order => (
                   <tr key={order.id} className="border-b border-gray-50 hover:bg-slate-50 transition-colors">
-                    <td className="p-6 font-black text-ferrari text-lg">#{order.id}</td>
+                    <td className="p-6">
+                      <p className="font-black text-ferrari text-lg leading-none mb-1">#{order.id}</p>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{formatOrderDate(order.date)}</p>
+                    </td>
                     <td className="p-6">
                       <p className="font-black text-onyx uppercase mb-1">{order.customer.name}</p>
-                      <div className="flex flex-col gap-1.5">
-                        <a 
-                          href={`https://wa.me/55${order.customer.phone.replace(/\D/g, '')}`} 
-                          target="_blank" 
-                          className="text-[10px] font-black text-green-500 hover:text-green-600 flex items-center gap-1 transition-colors"
-                        >
-                          <i className="fab fa-whatsapp"></i> {order.customer.phone}
-                        </a>
-                        {order.mapsUrl && (
-                          <a 
-                            href={order.mapsUrl} 
-                            target="_blank" 
-                            className="text-[9px] font-black text-blue-500 hover:text-blue-600 flex items-center gap-1 uppercase tracking-widest transition-colors"
-                          >
-                            <i className="fas fa-map-location-dot"></i> Ver Rota de Entrega
+                      <a href={`https://wa.me/55${order.customer.phone.replace(/\D/g, '')}`} target="_blank" className="text-[10px] font-black text-green-500 hover:text-green-600 flex items-center gap-1">
+                        <i className="fab fa-whatsapp"></i> {order.customer.phone}
+                      </a>
+                    </td>
+                    <td className="p-6">
+                       {order.mapsUrl && (
+                          <a href={order.mapsUrl} target="_blank" className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-xl font-black uppercase text-[9px] tracking-widest border border-blue-100 hover:bg-blue-100 transition-all shadow-sm">
+                            <i className="fas fa-map-location-dot"></i> Ver no Mapa
                           </a>
                         )}
-                      </div>
                     </td>
                     <td className="p-6">
                       <p className="font-black text-onyx">R$ {order.total.toFixed(2)}</p>
@@ -376,9 +386,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
                   </tr>
                 ))}
                 {orders.length === 0 && (
-                  <tr>
-                    <td colSpan={4} className="p-20 text-center text-gray-300 font-black uppercase tracking-widest text-sm">Nenhum pedido realizado ainda.</td>
-                  </tr>
+                  <tr><td colSpan={5} className="p-20 text-center text-gray-300 font-black uppercase tracking-widest text-sm">Nenhum pedido realizado ainda.</td></tr>
                 )}
               </tbody>
             </table>
@@ -406,7 +414,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {productsInCategory.map(product => (
-                  <div key={product.id} className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-50 flex items-center gap-6 relative group hover:border-ferrari transition-all">
+                  <div key={product.id} className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100 flex items-center gap-6 relative group hover:border-ferrari transition-all">
                     <img src={product.image} className="w-20 h-20 rounded-2xl object-cover shadow-md group-hover:scale-110 transition-transform" />
                     <div className="flex-grow">
                       <h4 className="font-black text-onyx uppercase text-lg leading-tight mb-1">{product.name}</h4>
@@ -476,10 +484,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, orders, setProducts, 
                     onChange={e => setNewProduct({...newProduct, category: e.target.value as Category})} 
                     className="w-full bg-slate-50 rounded-2xl p-5 font-black uppercase outline-none shadow-inner"
                   >
-                    {Object.entries(CATEGORY_LABELS)
-                      .filter(([v]) => v !== Category.TIPS) // REMOVIDO: Dicas do Barão não podem ser cadastradas como produtos de venda
-                      .map(([v, l]) => <option key={v} value={v}>{l}</option>)
-                    }
+                    {Object.entries(CATEGORY_LABELS).filter(([v]) => v !== Category.TIPS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                   </select>
                 </div>
               </div>
